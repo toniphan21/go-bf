@@ -2,12 +2,21 @@ package main
 
 import (
 	"fmt"
+	"github.com/toniphan21/go-bf"
 	"math"
 )
 
 func main() {
+	cf := bf.WithAccuracy(0.01, 1_000_000)
+	fmt.Println(cf.Info())
+	cf2 := bf.WithCapacity(8192, 5)
+	fmt.Println(cf2.Info())
+	fmt.Println(math.Log2(float64(8192)))
+}
+
+func main2() {
 	errorRate := 0.02
-	numberOfItems := float64(10000000)
+	numberOfItems := float64(10_000_000)
 	log2 := math.Abs(math.Log2(errorRate))
 	k := log2
 	bitPerItem := 1.44 * log2

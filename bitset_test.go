@@ -1,6 +1,7 @@
-package storage
+package bf
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
 	"testing"
@@ -9,10 +10,10 @@ import (
 func TestBitset(t *testing.T) {
 	cases := []struct {
 		name     string
-		size     uint
-		capacity uint
-		start    uint
-		end      uint
+		size     uint32
+		capacity uint32
+		start    uint32
+		end      uint32
 	}{
 		{
 			name: "one byte", size: 1, capacity: 5, start: 0, end: 8,
@@ -37,7 +38,8 @@ func TestBitset(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mut := newBitset(tc.size, tc.capacity)
-			for i := tc.start; i <= tc.end; i++ {
+			var i uint32 = 0
+			for i = tc.start; i <= tc.end; i++ {
 				before := mut.Get(i)
 				mut.Set(i)
 				after := mut.Get(i)
@@ -62,7 +64,7 @@ func TestBitset(t *testing.T) {
 						chars[ci] = "0"
 					}
 					chars[i] = "1"
-					assertStringEqual(t, sprintBytesInBinary(b.Bytes()), strings.Join(chars, ""))
+					assertStringEqual(t, sprintfBytesInBinary(b.Bytes()), strings.Join(chars, ""))
 				} else {
 					assertBoolForIndex(t, i, after, false)
 				}
@@ -75,19 +77,37 @@ func TestBitset(t *testing.T) {
 	}
 }
 
-func reverseByteBinary(b string) string {
+func TestPickBit(t *testing.T) {
+	var num uint32 = 12345678
+	le := make([]byte, 4)
+	binary.LittleEndian.PutUint32(le, num)
+	fmt.Printf("%v\n", sprintfBytesInBinary(&le))
+
+	src := bitset{data: le, capacity: 32}
+	dist := bitset{data: make([]byte, 4), capacity: 32}
+	var i uint32 = 0
+	for i = 0; i < src.capacity; i++ {
+		if src.Get(i) {
+			dist.Set(i)
+		}
+	}
+	result := binary.LittleEndian.Uint32(dist.data)
+	fmt.Printf("%v\n", result)
+}
+
+func reverseByteBinaryString(b string) string {
 	return string([]uint8{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]})
 }
 
-func sprintBytesInBinary(b *[]byte) string {
+func sprintfBytesInBinary(b *[]byte) string {
 	result := make([]string, len(*b))
 	for i, bt := range *b {
-		result[i] = reverseByteBinary(fmt.Sprintf("%08b", bt))
+		result[i] = reverseByteBinaryString(fmt.Sprintf("%08b", bt))
 	}
 	return strings.Join(result, "")
 }
 
-func assertBoolForIndex(t *testing.T, index uint, result, expected bool) {
+func assertBoolForIndex(t *testing.T, index uint32, result, expected bool) {
 	if result != expected {
 		t.Errorf("Index %v: Expected %t, got %t", index, expected, result)
 	}
