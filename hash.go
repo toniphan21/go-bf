@@ -2,6 +2,7 @@ package bf
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 )
 
 type Hash interface {
@@ -12,6 +13,32 @@ type HashFactory interface {
 	Make(numberOfHashFunctions, hashSizeInBits byte) Hash
 }
 
+type KeySplitter struct {
+	Source   []byte
+	Length   int
+	KeyCount int
+	KeySize  int
+}
+
+func (k *KeySplitter) Split() []uint32 {
+	bs := bitset{
+		data:     k.Source,
+		capacity: uint32(k.Length),
+	}
+	result := make([]uint32, k.KeyCount)
+	for i := 0; i < k.KeyCount; i++ {
+		rbs := bitset{data: make([]byte, 4), capacity: 32}
+		for j := 0; j < k.KeySize; j++ {
+			index := uint32(i*k.KeySize + j)
+			if bs.Get(index) {
+				rbs.Set(uint32(j))
+			}
+		}
+		result[i] = binary.LittleEndian.Uint32(rbs.data)
+	}
+	return result
+}
+
 const shaSize = 32
 
 type shaHash struct {
@@ -20,18 +47,21 @@ type shaHash struct {
 }
 
 func (h *shaHash) Hash(input []byte) []uint32 {
-	var length = int(h.count) * int(h.size)
+	count := int(h.count)
+	size := int(h.size)
+	var length = count * size
 	var times = length / 256
 	var mod = length % 256
 	if mod > 0 {
 		times++
 	}
-	_ = bitset{
-		data:     h.doHash(byte(times), &input),
-		capacity: uint32(times * shaSize * 8),
+	kp := &KeySplitter{
+		Source:   h.doHash(byte(times), &input),
+		Length:   times * shaSize * 8,
+		KeyCount: count,
+		KeySize:  size,
 	}
-
-	return make([]uint32, 0)
+	return kp.Split()
 }
 
 func (h *shaHash) doHash(n byte, input *[]byte) []byte {
