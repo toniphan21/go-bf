@@ -21,7 +21,7 @@ func calcKeyMinSizeFromCapacity(capacity uint32) byte {
 	return byte(math.Ceil(math.Log2(float64(capacity))))
 }
 
-func calcEstimateErrorRate(k byte, n int, m uint32) float64 {
+func calcEstimatedErrorRate(k byte, n int, m uint32) float64 {
 	return math.Pow(1-math.Pow(math.E, (0-float64(k)*float64(n))/float64(m)), float64(k))
 }
 
@@ -75,18 +75,22 @@ func (c *config) Info() string {
 		info = append(info, fmt.Sprintf("  - Size in bits of each has function: %v", c.keySize()))
 
 		log := int(math.Ceil(math.Log10(float64(c.storageCapacity))))
-		base := 10
 		info = append(info, fmt.Sprintf("  - Estimated error rate by n - number of added items:"))
 		fmtString := fmt.Sprintf("      n=%%%vd; estimated error rate: %%#.5f%%%%", log+1)
-		for i := 1; i <= log; i++ {
+		var i = log - 3
+		if i < 1 {
+			i = 1
+		}
+		base := int(math.Pow(10, float64(i)))
+		for ; i <= log; i++ {
 			n := base
-			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimateErrorRate(c.k, n, c.storageCapacity)))
+			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimatedErrorRate(c.k, n, c.storageCapacity)))
 
 			n = 2 * base
-			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimateErrorRate(c.k, n, c.storageCapacity)))
+			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimatedErrorRate(c.k, n, c.storageCapacity)))
 
 			n = 5 * base
-			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimateErrorRate(c.k, n, c.storageCapacity)))
+			info = append(info, fmt.Sprintf(fmtString, n, 100*calcEstimatedErrorRate(c.k, n, c.storageCapacity)))
 
 			base *= 10
 		}

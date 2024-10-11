@@ -1,7 +1,6 @@
 package bf
 
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 	"testing"
@@ -77,26 +76,8 @@ func TestBitset(t *testing.T) {
 	}
 }
 
-func TestPickBit(t *testing.T) {
-	var num uint32 = 12345678
-	le := make([]byte, 4)
-	binary.LittleEndian.PutUint32(le, num)
-	fmt.Printf("%v\n", sprintfBytesInBinary(&le))
-
-	src := bitset{data: le, capacity: 32}
-	dist := bitset{data: make([]byte, 4), capacity: 32}
-	var i uint32 = 0
-	for i = 0; i < src.capacity; i++ {
-		if src.Get(i) {
-			dist.Set(i)
-		}
-	}
-	result := binary.LittleEndian.Uint32(dist.data)
-	fmt.Printf("%v\n", result)
-}
-
 func reverseByteBinaryString(b string) string {
-	return string([]uint8{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]})
+	return string([]byte{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]})
 }
 
 func sprintfBytesInBinary(b *[]byte) string {
