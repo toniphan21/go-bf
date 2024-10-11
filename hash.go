@@ -41,6 +41,15 @@ func (k *KeySplitter) Split() []uint32 {
 
 const shaSize = 32
 
+type shaHashFactory struct{}
+
+func (s *shaHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hash {
+	return &shaHash{
+		count: numberOfHashFunctions,
+		size:  hashSizeInBits,
+	}
+}
+
 type shaHash struct {
 	count byte
 	size  byte
