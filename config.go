@@ -111,17 +111,15 @@ func WithAccuracy(errorRate float64, numberOfItems uint32) Config {
 	log2 := math.Abs(math.Log2(errorRate))
 	k := log2
 	bitPerItem := 1.44 * log2
-	capacityInBits := noi * bitPerItem
 	capacity := uint32(math.Ceil(noi * bitPerItem))
 
 	nK := byte(math.Ceil(k))
-	estimatedErrorRate := math.Pow(1-math.Pow(math.E, (0-float64(nK)*noi)/math.Ceil(capacityInBits)), float64(nK))
 	return &config{
 		mode:            "accuracy",
 		k:               nK,
 		m:               bitPerItem,
 		n:               numberOfItems,
-		e:               estimatedErrorRate,
+		e:               calcEstimatedErrorRate(nK, int(numberOfItems), capacity),
 		requestedE:      errorRate,
 		storageCapacity: capacity,
 	}
