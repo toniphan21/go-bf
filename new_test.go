@@ -1,9 +1,26 @@
 package bf
 
-import "testing"
+import (
+	"github.com/toniphan21/go-bf/internal"
+	"testing"
+)
 
 func TestNew(t *testing.T) {
 
+}
+
+func TestBloomFilter_NoFalseNegatives(t *testing.T) {
+	n, m := 1_000_000, 5_000_000
+	cf := WithCapacity(uint32(m), 10)
+	bf, _ := New(cf)
+	for i := 0; i < n; i++ {
+		item := []byte(internal.RandString(10))
+		bf.Add(item)
+		after := bf.Exists(item)
+		if !after {
+			t.Fatalf("Bloom Filter has false negative")
+		}
+	}
 }
 
 type dummyStorageFactory struct{}

@@ -62,11 +62,13 @@ func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
 		opt(&o)
 	}
 
-	hash := o.hashFactory.Make(config.K(), config.KeySize())
 	storage, err := o.storageFactory.Make(config.StorageCapacity())
 	if err != nil {
 		return nil, err
 	}
+
+	hash := o.hashFactory.Make(config.NumberOfHashFunctions(), calcKeyMinSizeFromCapacity(config.StorageCapacity()))
+
 	return &bloomFilter{storage: storage, hash: hash, count: 0}, nil
 }
 
