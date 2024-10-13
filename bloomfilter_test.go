@@ -24,10 +24,6 @@ func (m *mockStorage) Capacity() uint32 {
 	return m.capacity
 }
 
-func (m *mockStorage) Bytes() *[]byte {
-	return nil
-}
-
 func (m *mockStorage) assertSetCalledWith(t *testing.T, indices []uint32) {
 	if len(m.setIndex) != len(indices) {
 		t.Errorf("Set is not called with %v", indices)

@@ -33,10 +33,6 @@ func (b *bitset) Get(index uint32) bool {
 	return d > 0
 }
 
-func (b *bitset) Bytes() *[]byte {
-	return &b.data
-}
-
 func (b *bitset) indexing(i uint32) (uint32, byte) {
 	n := i / 8
 	m := i % 8

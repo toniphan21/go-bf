@@ -12,8 +12,6 @@ type Storage interface {
 	Get(index uint32) bool
 
 	Capacity() uint32
-
-	Bytes() *[]byte
 }
 
 type StorageFactory interface {
