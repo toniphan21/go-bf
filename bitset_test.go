@@ -63,7 +63,7 @@ func TestBitset(t *testing.T) {
 						chars[ci] = "0"
 					}
 					chars[i] = "1"
-					assertStringEqual(t, sprintfBytesInBinary(b.Bytes()), strings.Join(chars, ""))
+					assertStringEqual(t, sprintfBytesInBinary(&b.data), strings.Join(chars, ""))
 				} else {
 					assertBoolForIndex(t, i, after, false)
 				}
