@@ -2,8 +2,6 @@
 
 A [Bloom Filter](https://en.wikipedia.org/wiki/Bloom_filter) written in GoLang with flexible options and no dependencies.
 
-![bloom filter](https://upload.wikimedia.org/wikipedia/commons/c/c4/Bloom_filter_speed.svg)
-
 ### Usage
 
 Initialize a Bloom Filter `WithAccuracy` configuration
@@ -189,20 +187,24 @@ This library has builtin 2 hashing functions with the same strategy:
 Example 1: `size = 25`, `count = 10`, use `SHA-256`:
 
 - Because 25*10 = 250 bits, we only need to hash 1 time
-- hash = sha_hash(input)
+- hash = `sha_hash(input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
+- pick key 9 = bit 225-249
 - bit 250-255 is discarded
+- return `[10]uint32{key0, key1...key9}`
 
 Example 2: `size = 25`, `count = 10`, use `FNV-128`:
 
 - Because 25*10 > 128, we hash input 2 times
-- hash = fnv_128(byte(0) + input) + fnv_128(byte(1) + input)
+- hash = `fnv_128(byte(0) + input)` + `fnv_128(byte(1) + input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
+- pick key 9 = bit 225-249
 - bit 250-255 is discarded
+- return `[10]uint32{key0, key1...key9}`
 
 ### Customization
 
