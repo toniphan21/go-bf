@@ -1,6 +1,23 @@
 package main
 
-import "github.com/toniphan21/go-bf"
+import (
+	"fmt"
+	"github.com/toniphan21/go-bf"
+)
+
+func infoOfWithCapacity() {
+	var capacityInBits uint32 = 65_536
+	var numberOfHashFunctions byte = 5
+	config := bf.WithCapacity(capacityInBits, numberOfHashFunctions)
+	fmt.Println(config.Info())
+}
+
+func infoOfWithAccuracy() {
+	var errorRate = 0.001
+	var numberOfItems uint32 = 10_000_000
+	config := bf.WithAccuracy(errorRate, numberOfItems)
+	fmt.Println(config.Info())
+}
 
 type YourHash struct {
 	count byte
@@ -23,7 +40,7 @@ func (y *YourHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Ha
 	}
 }
 
-func main() {
+func customHash() {
 	config := bf.WithAccuracy(0.01, 1_000_000)
 	filter, err := bf.New(config, bf.WithHash(&YourHashFactory{}))
 	if err != nil {
