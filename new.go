@@ -45,3 +45,9 @@ func WithSHA() OptionFunc {
 		o.hashFactory = &shaHashFactory{}
 	}
 }
+
+func WithFNV() OptionFunc {
+	return func(o *Option) {
+		o.hashFactory = &fnvHashFactory{}
+	}
+}

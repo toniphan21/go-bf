@@ -119,3 +119,14 @@ func TestWithSHA(t *testing.T) {
 		t.Errorf("Expected hash factory to be shaHashFactory, got %T", opt.hashFactory)
 	}
 }
+
+func TestWithFNV(t *testing.T) {
+	opt := &Option{}
+	fn := WithFNV()
+	fn(opt)
+
+	_, ok := opt.hashFactory.(*fnvHashFactory)
+	if !ok {
+		t.Errorf("Expected hash factory to be fnvHashFactory, got %T", opt.hashFactory)
+	}
+}
