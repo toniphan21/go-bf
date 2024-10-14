@@ -177,7 +177,7 @@ Config WithCapacity()
 
 #### Hashing strategy
 
-This library has builtin 2 hashing functions with the same strategy:
+This library has builtin 2 hash functions with the same strategy:
 
 - From the config we could know: `size` minimum key size (in bits) and `count` number of hash needed.
 - Use `SHA-256` or `FNV-128` to generate hash bytes from the input. If `size * count` > `256` when use SHA (or `128`
@@ -297,6 +297,11 @@ func main() {
 }
 ```
 
-### Licence
+### Benchmark
 
-MIT.
+```
+BenchmarkBloomFilter_WithSHA_Add-12       	 1026219	      1120  ns/op
+BenchmarkBloomFilter_WithFNV_Add-12       	 2048646	      593.9 ns/op
+BenchmarkBloomFilter_WithSHA_Exists-12    	 1000000	      1127  ns/op
+BenchmarkBloomFilter_WithFNV_Exists-12    	 2114071	      569.9 ns/op
+```

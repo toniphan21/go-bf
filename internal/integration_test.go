@@ -69,27 +69,42 @@ func TestBloomFilter_FalsePositiveRate_WithCapacity(t *testing.T) {
 
 func TestBloomFilter_FalsePositiveRate_WithAccuracy(t *testing.T) {
 	requested := []float64{0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0001}
-	for _, requestedErrorRate := range requested {
-		t.Run(fmt.Sprintf("Check false positive rate with requested error rate %v", requestedErrorRate), func(t *testing.T) {
+	for _, e := range requested {
+		t.Run(fmt.Sprintf("Check false positive rate with requested error rate %v - SHA", e), func(t *testing.T) {
 			t.Parallel()
 			var n = 1_000_000
-			cf := bf.WithAccuracy(requestedErrorRate, uint32(n))
-			filter, _ := bf.New(cf)
-			for i := 0; i < n; i++ {
-				filter.Add([]byte(RandString(10 + rand.Intn(10))))
-			}
-
-			count := 0
-			for i := 0; i < n; i++ {
-				if filter.Exists([]byte(RandString(9))) {
-					count++
-				}
-			}
-			rate := float64(count) / float64(n)
-			tolerant := math.Abs(rate - requestedErrorRate)
-			if tolerant > requestedErrorRate {
-				t.Skipf("False positive error rate is 2x greater than requested. Requested %v, actual %v", requestedErrorRate, rate)
-			}
+			filter, _ := bf.New(bf.WithAccuracy(e, uint32(n)))
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
 		})
+
+		t.Run(fmt.Sprintf("Check false positive rate with requested error rate %v - FVN", e), func(t *testing.T) {
+			t.Parallel()
+			var n = 1_000_000
+			filter, _ := bf.New(bf.WithAccuracy(e, uint32(n)), bf.WithFNV())
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
+		})
+	}
+}
+
+func runTestBloomFilterFalsePositiveRateWithAccuracy(
+	t *testing.T,
+	n int,
+	filter bf.BloomFilter,
+	requestedErrorRate float64,
+) {
+	for i := 0; i < n; i++ {
+		filter.Add([]byte(RandString(10 + rand.Intn(10))))
+	}
+
+	count := 0
+	for i := 0; i < n; i++ {
+		if filter.Exists([]byte(RandString(9))) {
+			count++
+		}
+	}
+	rate := float64(count) / float64(n)
+	tolerant := math.Abs(rate - requestedErrorRate)
+	if tolerant > requestedErrorRate {
+		t.Skipf("False positive error rate is 2x greater than requested. Requested %v, actual %v", requestedErrorRate, rate)
 	}
 }
