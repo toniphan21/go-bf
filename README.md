@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/github/toniphan21/go-bf/graph/badge.svg?token=20ILOD9CPG)](https://codecov.io/github/toniphan21/go-bf)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b80cab5415324a4e91ad5cd6cdec1fb0)](https://app.codacy.com/gh/toniphan21/go-bf/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Go Report Card](https://goreportcard.com/badge/github.com/toniphan21/go-bf)](https://goreportcard.com/report/github.com/toniphan21/go-bf)
+[![Go Reference](https://pkg.go.dev/badge/github.com/toniphan21/go-bf?status.svg)](https://pkg.go.dev/github.com/toniphan21/go-bf?tab=doc)
 
 A [Bloom Filter](https://en.wikipedia.org/wiki/Bloom_filter) written in GoLang with flexible options and no dependencies.
 
