@@ -1,3 +1,3 @@
 module github.com/toniphan21/go-bf
 
-go 1.19.13
+go 1.19
