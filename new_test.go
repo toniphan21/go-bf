@@ -130,3 +130,30 @@ func TestWithFNV(t *testing.T) {
 		t.Errorf("Expected hash factory to be fnvHashFactory, got %T", opt.hashFactory)
 	}
 }
+
+func TestMustPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Expected Must() to panic, but it did not")
+		}
+	}()
+
+	expected := errors.New("whatever")
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	storage := &stubStorageFactory{err: expected}
+
+	Must(cf, WithStorage(storage))
+}
+
+func TestMustDoesNotPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Did not expect Must() to panic, but it did")
+		}
+	}()
+
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	storage := &stubStorageFactory{}
+
+	Must(cf, WithStorage(storage))
+}

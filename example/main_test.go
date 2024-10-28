@@ -5,6 +5,32 @@ import (
 	"github.com/toniphan21/go-bf"
 )
 
+type YourConfig struct {
+}
+
+func (y *YourConfig) Info() string {
+	return "info about your config"
+}
+
+func (y *YourConfig) NumberOfHashFunctions() byte {
+	return 5
+}
+
+func (y *YourConfig) StorageCapacity() uint32 {
+	return 1_000_000
+}
+
+func main() {
+	config := &YourConfig{}
+	filter, err := bf.New(config)
+	if err != nil {
+		panic("Something went wrong")
+	}
+
+	filter.Add([]byte("anything"))
+	// ...
+}
+
 func infoOfWithCapacity() {
 	var capacityInBits uint32 = 65_536
 	var numberOfHashFunctions byte = 5
@@ -42,10 +68,7 @@ func (y *YourHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Ha
 
 func customHash() {
 	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter, err := bf.New(config, bf.WithHash(&YourHashFactory{}))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(config, bf.WithHash(&YourHashFactory{}))
 
 	filter.Add([]byte("anything"))
 	// ...
@@ -77,10 +100,7 @@ func (f *FileStorageFactory) Make(capacity uint32) (bf.Storage, error) {
 
 func customStorage() {
 	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter, err := bf.New(config, bf.WithStorage(&FileStorageFactory{}))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(config, bf.WithStorage(&FileStorageFactory{}))
 
 	filter.Add([]byte("anything"))
 	// ...
@@ -89,10 +109,7 @@ func customStorage() {
 func newWithCapacity() {
 	var capacityInBits uint32 = 65_536
 	var numberOfHashFunctions byte = 5
-	filter, err := bf.New(bf.WithCapacity(capacityInBits, numberOfHashFunctions))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(bf.WithCapacity(capacityInBits, numberOfHashFunctions))
 
 	filter.Add([]byte("anything"))
 

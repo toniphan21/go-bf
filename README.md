@@ -13,10 +13,7 @@ import "github.com/toniphan21/go-bf"
 func main() {
 	var errorRate = 0.001
 	var numberOfItems uint32 = 10_000_000
-	filter, err := bf.New(bf.WithAccuracy(errorRate, numberOfItems))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(bf.WithAccuracy(errorRate, numberOfItems))
 
 	filter.Add([]byte("anything"))
 
@@ -41,10 +38,7 @@ import "github.com/toniphan21/go-bf"
 func main() {
 	var capacityInBits uint32 = 65_536
 	var numberOfHashFunctions byte = 5
-	filter, err := bf.New(bf.WithCapacity(capacityInBits, numberOfHashFunctions))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(bf.WithCapacity(capacityInBits, numberOfHashFunctions))
 
 	filter.Add([]byte("anything"))
 
@@ -58,7 +52,26 @@ func main() {
 }
 ```
 
-### Options
+### APIs
+
+#### Constructors
+
+- `New(Config, ...Options) (BloomFilter, error)` initialize new instance
+- `Must(Config, ...Options) BloomFilter` initialize new instance, panic if encounter any error
+
+#### BloomFilter interface
+
+The `BloomFilter` interface has 4 main methods:
+
+| Method                | Description                               |
+|-----------------------|-------------------------------------------|
+| `Add([]byte)`         | Add an item into the filter               |
+| `Exists([]byte) bool` | Check existence of an item in the filter  |
+| `Count() int`         | Get number of items added into the filter |
+| `Data() Storage`      | Get filter's Storage                      |
+
+
+#### Options
 
 There are 4 option functions could be used from the second param of `bf.New(Config, ...OptionFunc)`:
 
@@ -175,6 +188,8 @@ Config WithCapacity()
  */
 ```
 
+> If you spot something wrong with the calculation, no worries - you can [write your own config](https://github.com/toniphan21/go-bf?tab=readme-ov-file#write-your-own-config).
+
 #### Hashing strategy
 
 This library has builtin 2 hash functions with the same strategy:
@@ -241,10 +256,7 @@ func (y *YourHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Ha
 
 func main() {
 	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter, err := bf.New(config, bf.WithHash(&YourHashFactory{}))
-	if err != nil {
-		panic("Something went wrong")
-	}
+	filter := bf.Must(config, bf.WithHash(&YourHashFactory{}))
 
 	filter.Add([]byte("anything"))
 	// ...
@@ -287,7 +299,40 @@ func (f *FileStorageFactory) Make(capacity uint32) (bf.Storage, error) {
 
 func main() {
 	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter, err := bf.New(config, bf.WithStorage(&FileStorageFactory{}))
+	filter := bf.Must(config, bf.WithStorage(&FileStorageFactory{}))
+
+	filter.Add([]byte("anything"))
+	// ...
+}
+```
+
+#### Write your own config
+
+If you don't like `WithCapacity()` or `WithAccuracy()` configuration, you can write your own:
+
+```golang
+package main
+
+import "github.com/toniphan21/go-bf"
+
+type YourConfig struct {
+}
+
+func (y *YourConfig) Info() string {
+	return "info about your config"
+}
+
+func (y *YourConfig) NumberOfHashFunctions() byte {
+	return 5
+}
+
+func (y *YourConfig) StorageCapacity() uint32 {
+	return 1_000_000
+}
+
+func main() {
+	config := &YourConfig{}
+	filter, err := bf.New(config)
 	if err != nil {
 		panic("Something went wrong")
 	}
