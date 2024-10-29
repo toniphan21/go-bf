@@ -69,8 +69,7 @@ func (g *genericHash) hashNTimes(n byte, input *[]byte, fn func(*[]byte) []byte)
 	}
 
 	var result = make([]byte, int(n)*g.hashSizeInBytes)
-	var i byte = 0
-	for i = 0; i < n; i++ {
+	for i := byte(0); i < n; i++ {
 		l := len(*input)
 		item := make([]byte, l+1)
 		item[0] = i

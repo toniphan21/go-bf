@@ -37,8 +37,7 @@ func TestBitset(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			mut := newBitset(tc.size, tc.capacity)
-			var i uint32 = 0
-			for i = tc.start; i <= tc.end; i++ {
+			for i := tc.start; i <= tc.end; i++ {
 				before := mut.Get(i)
 				mut.Set(i)
 				after := mut.Get(i)
