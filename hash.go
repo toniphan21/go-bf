@@ -8,6 +8,8 @@ import (
 
 type Hash interface {
 	Hash([]byte) []uint32
+
+	Equals(other Hash) bool
 }
 
 type HashFactory interface {
@@ -89,6 +91,14 @@ type shaHash struct {
 	genericHash
 }
 
+func (h *shaHash) Equals(other Hash) bool {
+	o, ok := other.(*shaHash)
+	if !ok {
+		return false
+	}
+	return o.genericHash == h.genericHash
+}
+
 const shaSize = 32
 
 func (h *shaHash) Hash(input []byte) []uint32 {
@@ -118,6 +128,14 @@ func (s *shaHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hash {
 
 type fnvHash struct {
 	genericHash
+}
+
+func (h *fnvHash) Equals(other Hash) bool {
+	o, ok := other.(*fnvHash)
+	if !ok {
+		return false
+	}
+	return o.genericHash == h.genericHash
 }
 
 const fnvSize = 16

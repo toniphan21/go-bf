@@ -70,8 +70,48 @@ func TestBitset(t *testing.T) {
 				if b.Capacity() != tc.capacity {
 					t.Errorf("Expected Capacity %v, got %v", tc.capacity, b.Capacity())
 				}
+
+				c := newBitset(tc.size, tc.capacity)
+				c.Set(i)
+				before = c.Get(i)
+				c.Clear(i)
+				after = c.Get(i)
+
+				if i < tc.capacity {
+					assertBoolForIndex(t, i, before, true)
+				} else {
+					assertBoolForIndex(t, i, before, false)
+				}
+				assertBoolForIndex(t, i, after, false)
 			}
 		})
+	}
+}
+
+func TestBitset_Equals_ReturnsFalseIfItIsNotBitset(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &mockStorage{capacity: 1}
+
+	if b.Equals(o) {
+		t.Errorf("Expected false, got true")
+	}
+}
+
+func TestBitset_Equals_ReturnsFalseIfCapacityIsNotEqual(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &bitset{capacity: 2}
+
+	if b.Equals(o) {
+		t.Errorf("Expected false, got true")
+	}
+}
+
+func TestBitset_Equals_ReturnsTrueIfItIsABitsetAndHaveSameCapacity(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &bitset{capacity: 1}
+
+	if !b.Equals(o) {
+		t.Errorf("Expected true, got false")
 	}
 }
 

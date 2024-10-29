@@ -23,6 +23,16 @@ func (b *bitset) Set(index uint32) {
 	b.data[n] = d
 }
 
+func (b *bitset) Clear(index uint32) {
+	if index >= b.capacity {
+		return
+	}
+
+	n, m := b.indexing(index)
+	d := b.data[n] & (m ^ 0xFF)
+	b.data[n] = d
+}
+
 func (b *bitset) Get(index uint32) bool {
 	if index >= b.capacity {
 		return false
@@ -31,6 +41,14 @@ func (b *bitset) Get(index uint32) bool {
 	n, m := b.indexing(index)
 	d := b.data[n] & m
 	return d > 0
+}
+
+func (b *bitset) Equals(other Storage) bool {
+	o, ok := other.(*bitset)
+	if !ok {
+		return false
+	}
+	return o.capacity == b.capacity
 }
 
 func (b *bitset) indexing(i uint32) (uint32, byte) {
