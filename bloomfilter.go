@@ -14,6 +14,8 @@ type BloomFilter interface {
 	Hash() Hash
 
 	Intersect(other BloomFilter) error
+
+	Union(other BloomFilter) error
 }
 
 var ErrStorageDifference = errors.New("storage is not the same")
@@ -74,6 +76,28 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 	for i := uint32(0); i < oStorage.Capacity(); i++ {
 		if !b.storage.Get(i) || !oStorage.Get(i) {
 			b.storage.Clear(i)
+		}
+	}
+	return nil
+}
+
+func (b *bloomFilter) Union(other BloomFilter) error {
+	if !b.storage.Equals(other.Storage()) {
+		return ErrStorageDifference
+	}
+	if !b.hash.Equals(other.Hash()) {
+		return ErrHashDifference
+	}
+
+	if bi, ok := b.storage.(BatchUnion); ok {
+		bi.Union(other.Storage())
+		return nil
+	}
+
+	oStorage := other.Storage()
+	for i := uint32(0); i < oStorage.Capacity(); i++ {
+		if b.storage.Get(i) || oStorage.Get(i) {
+			b.storage.Set(i)
 		}
 	}
 	return nil

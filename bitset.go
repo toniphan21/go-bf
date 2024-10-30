@@ -66,9 +66,18 @@ func (b *bitset) Intersect(other Storage) {
 
 	l := len(b.data)
 	for i := 0; i < l; i++ {
-		if b.data[i] == 0 || o.data[i] == 0 {
-			continue
-		}
 		b.data[i] &= o.data[i]
+	}
+}
+
+func (b *bitset) Union(other Storage) {
+	o, ok := other.(*bitset)
+	if !ok {
+		return
+	}
+
+	l := len(b.data)
+	for i := 0; i < l; i++ {
+		b.data[i] |= o.data[i]
 	}
 }

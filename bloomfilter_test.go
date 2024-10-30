@@ -263,10 +263,75 @@ func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) 
 		t.Errorf("expected nil, got %v", err)
 	}
 
-	if as.data[0] != 0 || as.data[1] != 0 && as.data[2] != 0b00010001 {
+	if as.data[0] != 0 || as.data[1] != 0 || as.data[2] != 0b00010001 {
 		t.Errorf("Intersect should apply AND operator to all bytes")
 	}
-	if bs.data[0] != 1 || bs.data[1] != 0 && bs.data[2] != 0b01010101 {
+	if bs.data[0] != 1 || bs.data[1] != 0 || bs.data[2] != 0b01010101 {
 		t.Errorf("Intersect should not changed the given Storage data")
+	}
+}
+
+func TestUnion_ReturnsErrStorageAreNotEquals(t *testing.T) {
+	a := bloomFilter{storage: &mockStorage{capacity: 1}}
+	b := bloomFilter{storage: &mockStorage{capacity: 2}}
+	err := a.Union(&b)
+
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
+	if !errors.Is(err, ErrStorageDifference) {
+		t.Errorf("expected ErrStorageDifference, got %v", err)
+	}
+}
+
+func TestUnion_ReturnsErrIfNotHaveTheSameHash(t *testing.T) {
+	a := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{2, 1}}}
+	err := a.Union(&b)
+
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
+	if !errors.Is(err, ErrHashDifference) {
+		t.Errorf("expected ErrHashDifference, got %v", err)
+	}
+}
+
+func TestUnion_UseSetToChangeDataOfCurrentInstance(t *testing.T) {
+	ad := map[uint32]bool{0: false, 1: false, 2: true, 3: true, 4: true}
+	bd := map[uint32]bool{0: false, 1: true, 2: false, 3: true, 4: true}
+	storage := &mockStorage{capacity: 5, getData: ad}
+
+	a := bloomFilter{storage: storage, hash: &mockHash{hash: []uint32{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 5, getData: bd}, hash: &mockHash{hash: []uint32{1, 2}}}
+	err := a.Union(&b)
+
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+
+	storage.assertClearCalledWith(t, []uint32{})
+	storage.assertSetCalledWith(t, []uint32{1, 2, 3, 4})
+}
+
+func TestUnion_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
+	as := &bitset{data: []byte{0, 0, 2, 0b00110011}}
+	bs := &bitset{data: []byte{0, 1, 0, 0b01010101}}
+
+	a := bloomFilter{storage: as, hash: &mockHash{hash: []uint32{1, 2}}}
+	b := bloomFilter{storage: bs, hash: &mockHash{hash: []uint32{1, 2}}}
+	err := a.Union(&b)
+
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+
+	if as.data[0] != 0 || as.data[1] != 1 || as.data[2] != 2 && as.data[3] != 0b01110111 {
+		t.Errorf("Union should apply OR operator to all bytes")
+	}
+	if bs.data[0] != 0 || bs.data[1] != 1 || bs.data[2] != 0 && bs.data[3] != 0b01010101 {
+		t.Errorf("Union should not changed the given Storage data")
 	}
 }

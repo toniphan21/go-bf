@@ -47,3 +47,17 @@ func BenchmarkBloomFilter_Intersect(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkBloomFilter_Union(b *testing.B) {
+	bf := Must(WithAccuracy(0.01, 1_000_000))
+	right := Must(WithAccuracy(0.01, 1_000_000))
+	for i := 0; i < 1000; i++ {
+		bf.Add([]byte(internal.RandString(10)))
+		right.Add([]byte(internal.RandString(10)))
+	}
+	b.Run("bench", func(pb *testing.B) {
+		for i := 0; i < pb.N; i++ {
+			_ = bf.Union(right)
+		}
+	})
+}
