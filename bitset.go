@@ -57,3 +57,18 @@ func (b *bitset) indexing(i uint32) (uint32, byte) {
 
 	return n, 1 << m
 }
+
+func (b *bitset) Intersect(other Storage) {
+	o, ok := other.(*bitset)
+	if !ok {
+		return
+	}
+
+	l := len(b.data)
+	for i := 0; i < l; i++ {
+		if b.data[i] == 0 || o.data[i] == 0 {
+			continue
+		}
+		b.data[i] &= o.data[i]
+	}
+}

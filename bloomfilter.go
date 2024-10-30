@@ -65,6 +65,11 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 		return ErrHashDifference
 	}
 
+	if bi, ok := b.storage.(BatchIntersect); ok {
+		bi.Intersect(other.Storage())
+		return nil
+	}
+
 	oStorage := other.Storage()
 	for i := uint32(0); i < oStorage.Capacity(); i++ {
 		if !b.storage.Get(i) || !oStorage.Get(i) {

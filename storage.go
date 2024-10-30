@@ -18,6 +18,14 @@ type Storage interface {
 	Equals(other Storage) bool
 }
 
+type BatchIntersect interface {
+	Intersect(other Storage)
+}
+
+type BatchUnion interface {
+	Union(other Storage)
+}
+
 type StorageFactory interface {
 	Make(capacity uint32) (Storage, error)
 }

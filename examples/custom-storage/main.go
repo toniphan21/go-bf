@@ -6,6 +6,14 @@ type FileStorage struct {
 	capacity uint32
 }
 
+func (f *FileStorage) Intersect(other bf.Storage) {
+	// implement BatchIntersect to perform Intersect operator faster
+}
+
+func (f *FileStorage) Union(other bf.Storage) {
+	// implement BatchUnion to perform Union operator faster
+}
+
 func (f *FileStorage) Equals(other bf.Storage) bool {
 	o, ok := other.(*FileStorage)
 	if !ok {

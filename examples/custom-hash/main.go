@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/toniphan21/go-bf"
-)
+import "github.com/toniphan21/go-bf"
 
 type YourHash struct {
 	count byte

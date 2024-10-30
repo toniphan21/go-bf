@@ -115,6 +115,27 @@ func TestBitset_Equals_ReturnsTrueIfItIsABitsetAndHaveSameCapacity(t *testing.T)
 	}
 }
 
+func TestBitset_Intersect_DoesNothingIfStorageIsNotABitset(t *testing.T) {
+	b := &bitset{data: []byte{1, 2}}
+	o := &mockStorage{getData: map[uint32]bool{}}
+	b.Intersect(o)
+	if b.data[0] != 1 || b.data[1] != 2 {
+		t.Errorf("Expected do nothing something changed")
+	}
+}
+
+func TestBitset_Intersect(t *testing.T) {
+	a := &bitset{data: []byte{0, 2, 0b00110011}}
+	b := &bitset{data: []byte{1, 0, 0b01010101}}
+	a.Intersect(b)
+	if a.data[0] != 0 || a.data[1] != 0 && a.data[2] != 0b00010001 {
+		t.Errorf("Intersect should apply AND operator to all bytes")
+	}
+	if b.data[0] != 1 || b.data[1] != 0 && b.data[2] != 0b01010101 {
+		t.Errorf("Intersect should not changed the given Storage data")
+	}
+}
+
 func reverseByteBinaryString(b string) string {
 	return string([]byte{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]})
 }

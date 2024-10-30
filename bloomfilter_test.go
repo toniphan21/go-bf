@@ -234,7 +234,7 @@ func TestIntersect_ReturnsErrIfNotHaveTheSameHash(t *testing.T) {
 	}
 }
 
-func TestIntersect_CreateNewBloomFilterInstanceAndMergeBothUsingAndOperator(t *testing.T) {
+func TestIntersect_UseClearToChangeDataOfCurrentInstance(t *testing.T) {
 	ad := map[uint32]bool{0: false, 1: false, 2: true, 3: true, 4: true}
 	bd := map[uint32]bool{0: false, 1: true, 2: false, 3: true, 4: true}
 	storage := &mockStorage{capacity: 5, getData: ad}
@@ -249,4 +249,24 @@ func TestIntersect_CreateNewBloomFilterInstanceAndMergeBothUsingAndOperator(t *t
 
 	storage.assertSetCalledWith(t, []uint32{})
 	storage.assertClearCalledWith(t, []uint32{0, 1, 2})
+}
+
+func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
+	as := &bitset{data: []byte{0, 2, 0b00110011}}
+	bs := &bitset{data: []byte{1, 0, 0b01010101}}
+
+	a := bloomFilter{storage: as, hash: &mockHash{hash: []uint32{1, 2}}}
+	b := bloomFilter{storage: bs, hash: &mockHash{hash: []uint32{1, 2}}}
+	err := a.Intersect(&b)
+
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+
+	if as.data[0] != 0 || as.data[1] != 0 && as.data[2] != 0b00010001 {
+		t.Errorf("Intersect should apply AND operator to all bytes")
+	}
+	if bs.data[0] != 1 || bs.data[1] != 0 && bs.data[2] != 0b01010101 {
+		t.Errorf("Intersect should not changed the given Storage data")
+	}
 }
