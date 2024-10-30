@@ -1,5 +1,7 @@
 package bf
 
+import "errors"
+
 type BloomFilter interface {
 	Add(item []byte)
 
@@ -7,8 +9,15 @@ type BloomFilter interface {
 
 	Count() uint
 
-	Data() Storage
+	Storage() Storage
+
+	Hash() Hash
+
+	Intersect(other BloomFilter) error
 }
+
+var ErrStorageDifference = errors.New("storage is not the same")
+var ErrHashDifference = errors.New("hash is not the same")
 
 type bloomFilter struct {
 	hash    Hash
@@ -40,6 +49,32 @@ func (b *bloomFilter) Count() uint {
 	return b.count
 }
 
-func (b *bloomFilter) Data() Storage {
+func (b *bloomFilter) Storage() Storage {
 	return b.storage
+}
+
+func (b *bloomFilter) Hash() Hash {
+	return b.hash
+}
+
+func (b *bloomFilter) Intersect(other BloomFilter) error {
+	if !b.storage.Equals(other.Storage()) {
+		return ErrStorageDifference
+	}
+	if !b.hash.Equals(other.Hash()) {
+		return ErrHashDifference
+	}
+
+	if bi, ok := b.storage.(BatchIntersect); ok {
+		bi.Intersect(other.Storage())
+		return nil
+	}
+
+	oStorage := other.Storage()
+	for i := uint32(0); i < oStorage.Capacity(); i++ {
+		if !b.storage.Get(i) || !oStorage.Get(i) {
+			b.storage.Clear(i)
+		}
+	}
+	return nil
 }

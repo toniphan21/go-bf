@@ -65,14 +65,17 @@ func main() {
 
 #### BloomFilter interface
 
-The `BloomFilter` interface has 4 main methods:
+The `BloomFilter` interface has 7 main methods:
 
-| Method                | Description                               |
-|-----------------------|-------------------------------------------|
-| `Add([]byte)`         | Add an item into the filter               |
-| `Exists([]byte) bool` | Check existence of an item in the filter  |
-| `Count() int`         | Get number of items added into the filter |
-| `Data() Storage`      | Get filter's Storage                      |
+| Method                         | Description                                                                                                                                         |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Add([]byte)`                  | Add an item into the filter                                                                                                                         |
+| `Exists([]byte) bool`          | Check existence of an item in the filter                                                                                                            |
+| `Count() int`                  | Get number of items added into the filter                                                                                                           |
+| `Intersect(BloomFilter) error` | Intersect with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not |
+| `Union(BloomFilter) error`     | Union with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not     |
+| `Storage() Storage`            | Get filter's Storage                                                                                                                                |
+| `Hash() Hash`                  | Get filter's Hash                                                                                                                                   |
 
 
 #### Options
@@ -238,32 +241,41 @@ package main
 import "github.com/toniphan21/go-bf"
 
 type YourHash struct {
-	count byte
-	size  byte
+  count byte
+  size  byte
+}
+
+func (y *YourHash) Equals(other bf.Hash) bool {
+  o, ok := other.(*YourHash)
+  if !ok {
+    return false
+  }
+  // check other params
+  return y.count == o.count && y.size == o.size
 }
 
 func (y *YourHash) Hash(bytes []byte) []uint32 {
-	// return an array of hash for given bytes input.
-	//   - length of the array is count - number of hash functions
-	//   - each hash need to >= size - minimum size of a hash in bits
-	return []uint32{}
+  // return an array of hash for given bytes input.
+  //   - length of the array is count - number of hash functions
+  //   - each hash need to >= size - minimum size of a hash in bits
+  return []uint32{}
 }
 
 type YourHashFactory struct{}
 
 func (y *YourHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Hash {
-	return &YourHash{
-		count: numberOfHashFunctions,
-		size:  hashSizeInBits,
-	}
+  return &YourHash{
+    count: numberOfHashFunctions,
+    size:  hashSizeInBits,
+  }
 }
 
 func main() {
-	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter := bf.Must(config, bf.WithHash(&YourHashFactory{}))
+  config := bf.WithAccuracy(0.01, 1_000_000)
+  filter := bf.Must(config, bf.WithHash(&YourHashFactory{}))
 
-	filter.Add([]byte("anything"))
-	// ...
+  filter.Add([]byte("anything"))
+  // ...
 }
 ```
 
@@ -278,35 +290,56 @@ package main
 import "github.com/toniphan21/go-bf"
 
 type FileStorage struct {
-	capacity uint32
+  capacity uint32
+}
+
+func (f *FileStorage) Intersect(other bf.Storage) {
+  // implement BatchIntersect to perform Intersect operator faster
+}
+
+func (f *FileStorage) Union(other bf.Storage) {
+  // implement BatchUnion to perform Union operator faster
+}
+
+func (f *FileStorage) Equals(other bf.Storage) bool {
+  o, ok := other.(*FileStorage)
+  if !ok {
+    return false
+  }
+  // check other params
+  return o.capacity == f.capacity
 }
 
 func (f *FileStorage) Set(index uint32) {
-	// set a bit in the given index to true
+  // set a bit in the given index to true
+}
+
+func (f *FileStorage) Clear(index uint32) {
+  // clear a bit in the given index to true
 }
 
 func (f *FileStorage) Get(index uint32) bool {
-	// return a boolean in the given index
-	return false
+  // return a boolean in the given index
+  return false
 }
 
 func (f *FileStorage) Capacity() uint32 {
-	// return the capacity of the storage in bits
-	return f.capacity
+  // return the capacity of the storage in bits
+  return f.capacity
 }
 
 type FileStorageFactory struct{}
 
 func (f *FileStorageFactory) Make(capacity uint32) (bf.Storage, error) {
-	return &FileStorage{capacity}, nil
+  return &FileStorage{capacity}, nil
 }
 
 func main() {
-	config := bf.WithAccuracy(0.01, 1_000_000)
-	filter := bf.Must(config, bf.WithStorage(&FileStorageFactory{}))
+  config := bf.WithAccuracy(0.01, 1_000_000)
+  filter := bf.Must(config, bf.WithStorage(&FileStorageFactory{}))
 
-	filter.Add([]byte("anything"))
-	// ...
+  filter.Add([]byte("anything"))
+  // ...
 }
 ```
 

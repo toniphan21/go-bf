@@ -16,7 +16,7 @@ func TestMemoryStorageFactory_Make(t *testing.T) {
 		{
 			name:        "invalid capacity",
 			capacity:    0,
-			expectedErr: InvalidStorageCapacity,
+			expectedErr: ErrInvalidStorageCapacity,
 		},
 		{
 			name:             "rounded capacity",

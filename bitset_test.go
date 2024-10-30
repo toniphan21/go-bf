@@ -70,8 +70,69 @@ func TestBitset(t *testing.T) {
 				if b.Capacity() != tc.capacity {
 					t.Errorf("Expected Capacity %v, got %v", tc.capacity, b.Capacity())
 				}
+
+				c := newBitset(tc.size, tc.capacity)
+				c.Set(i)
+				before = c.Get(i)
+				c.Clear(i)
+				after = c.Get(i)
+
+				if i < tc.capacity {
+					assertBoolForIndex(t, i, before, true)
+				} else {
+					assertBoolForIndex(t, i, before, false)
+				}
+				assertBoolForIndex(t, i, after, false)
 			}
 		})
+	}
+}
+
+func TestBitset_Equals_ReturnsFalseIfItIsNotBitset(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &mockStorage{capacity: 1}
+
+	if b.Equals(o) {
+		t.Errorf("Expected false, got true")
+	}
+}
+
+func TestBitset_Equals_ReturnsFalseIfCapacityIsNotEqual(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &bitset{capacity: 2}
+
+	if b.Equals(o) {
+		t.Errorf("Expected false, got true")
+	}
+}
+
+func TestBitset_Equals_ReturnsTrueIfItIsABitsetAndHaveSameCapacity(t *testing.T) {
+	b := &bitset{capacity: 1}
+	o := &bitset{capacity: 1}
+
+	if !b.Equals(o) {
+		t.Errorf("Expected true, got false")
+	}
+}
+
+func TestBitset_Intersect_DoesNothingIfStorageIsNotABitset(t *testing.T) {
+	b := &bitset{data: []byte{1, 2}}
+	o := &mockStorage{getData: map[uint32]bool{}}
+	b.Intersect(o)
+	if b.data[0] != 1 || b.data[1] != 2 {
+		t.Errorf("Expected do nothing something changed")
+	}
+}
+
+func TestBitset_Intersect(t *testing.T) {
+	a := &bitset{data: []byte{0, 2, 0b00110011}}
+	b := &bitset{data: []byte{1, 0, 0b01010101}}
+	a.Intersect(b)
+	if a.data[0] != 0 || a.data[1] != 0 && a.data[2] != 0b00010001 {
+		t.Errorf("Intersect should apply AND operator to all bytes")
+	}
+	if b.data[0] != 1 || b.data[1] != 0 && b.data[2] != 0b01010101 {
+		t.Errorf("Intersect should not changed the given Storage data")
 	}
 }
 

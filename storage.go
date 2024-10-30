@@ -4,14 +4,26 @@ import (
 	"errors"
 )
 
-var InvalidStorageCapacity = errors.New("invalid storage capacity")
+var ErrInvalidStorageCapacity = errors.New("invalid storage capacity")
 
 type Storage interface {
 	Set(index uint32)
 
+	Clear(index uint32)
+
 	Get(index uint32) bool
 
 	Capacity() uint32
+
+	Equals(other Storage) bool
+}
+
+type BatchIntersect interface {
+	Intersect(other Storage)
+}
+
+type BatchUnion interface {
+	Union(other Storage)
 }
 
 type StorageFactory interface {
@@ -22,7 +34,7 @@ type memoryStorageFactory struct{}
 
 func (msf *memoryStorageFactory) Make(capacity uint32) (Storage, error) {
 	if capacity <= 0 {
-		return nil, InvalidStorageCapacity
+		return nil, ErrInvalidStorageCapacity
 	}
 
 	n, m := capacity/8, capacity%8
