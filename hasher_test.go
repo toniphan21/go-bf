@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+const hashInput = "hello"
+
 type mockHashFn struct {
 	hashCalledCount int
 	hashCalledWith  map[int][]byte

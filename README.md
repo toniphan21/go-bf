@@ -71,7 +71,7 @@ The `BloomFilter` interface has 7 main methods:
 |--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Add([]byte)`                  | Add an item into the filter                                                                                                                         |
 | `Exists([]byte) bool`          | Check existence of an item in the filter                                                                                                            |
-| `Count() int`                  | Get number of items added into the filter                                                                                                           |
+| `Count() int`                  | Get number of items added into the filter. Return -1 if not sure (for example after using `Intersect()` or `Union()`                                 |
 | `Intersect(BloomFilter) error` | Intersect with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not |
 | `Union(BloomFilter) error`     | Union with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not     |
 | `Storage() Storage`            | Get filter's Storage                                                                                                                                |
@@ -86,7 +86,7 @@ There are 4 option functions could be used from the second param of `bf.New(Conf
 |---------------------------------|-----------|--------------------------------------------------------|
 | `WithSHA()`                     | _default_ | Use splitted SHA hashing strategy (more uniform hash)  |
 | `WithFNV()`                     |           | Use splitted FNV hashing strategy (better performance) |
-| `WithHash(f HashFactory)`       |           | Customize Hashing strategy with a HashFactory          |
+| `WithHasher(f HasherFactory)`   |           | Customize Hashing strategy with a HasherFactory        |
 | `WithStorage(f StorageFactory)` |           | Customize Storage strategy with a StorageFactory       |
 
 
@@ -199,80 +199,109 @@ Config WithCapacity()
 
 #### Hashing strategy
 
-This library has builtin 2 hash functions with the same strategy:
+This library has builtin 2 hasher with the same strategy:
 
-- From the config we could know: `size` minimum key size (in bits) and `count` number of hash needed.
-- Use `SHA-256` or `FNV-128` to generate hash bytes from the input. If `size * count` > `256` when use SHA (or `128`
-  when use FNV), will do the hash multiple times with a byte prefixed
-- Pick `size` bits from the hash bytes in previous step, discard all remaining bits.
+- From the config we could know: `keySize` minimum key size (in bits) and `keyCount` number of hash function needed.
+- When BloomFilter calls `Hasher.Hash()` it passes `count` - number of keys array needed
+- Use `SHA-256` or `FNV-128` to generate hash bytes from the input. If `count * keySize * keyCount` > `256` when use
+  SHA (or `128` when use FNV), will do the hash multiple times with a byte prefixed
+- Pick `count * keyCount * keySize` bits from the hash bytes in previous step, discard all remaining bits.
 
-Example 1: `size = 25`, `count = 10`, use `SHA-256`:
+Example 1: `count = 1`, `keySize = 25`, `keyCount = 10`, use `SHA-256`:
 
-- Because 25*10 = 250 bits, we only need to hash 1 time
+- Because `1*25*10 = 250 bits`, we only need to hash 1 time
 - hash = `sha_hash(input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
 - pick key 9 = bit 225-249
 - bit 250-255 is discarded
-- return `[10]uint32{key0, key1...key9}`
+- return `[1][10]uint32{ {key0, key1...key9} }`
 
-Example 2: `size = 25`, `count = 10`, use `FNV-128`:
+Example 2: `count = 1`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
 
-- Because 25*10 > 128, we hash input 2 times
-- hash = `fnv_128(byte(0) + input)` + `fnv_128(byte(1) + input)`
+- Because `1*25*10 > 128`, we hash input 2 times
+- hash = `fnv_128(input)` + `fnv_128(byte(0) + input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
 - pick key 9 = bit 225-249
 - bit 250-255 is discarded
-- return `[10]uint32{key0, key1...key9}`
+- return `[1][10]uint32{ {key0, key1...key9} }`
+
+Example 3: `count = 2`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
+
+- Because `2*25*10 = 500 > 128` bits, we need to hash 4 times
+- hash = `fnv_128(input)` + `fnv_128(byte(0) + input)` + `fnv_128(byte(1) + input)`+ `fnv_128(byte(2) + input)`
+- pick key 0 = bit 0-24
+- pick key 1 = bit 25-49
+- ...
+- pick key 9 = bit 225-249
+- ... 
+- pick key 19 = bit 475-499
+- bit 500-512 is discarded
+- return `[2][10]uint32{ {key0, key1...key9}, {key10...key19} }`
+
+This strategy guarantees that the first n keys will always have the same size independent from `count` passed via
+`Hasher.Hash()` function. A classic BloomFilter always use `count=1` but the other variants may use more than 1
+key collection.
 
 ### Customization
 
 #### Write your own hashing strategy
 
-By default, an SHA hash splitted by number of key and key size are used. You can customize the Hash functions by
-implement `Hash` and `HashFactory` interface:
+By default, an `SHAHasher` is used. You can customize the Hasher functions by implement `Hasher` and 
+`HasherFactory` interface:
 
 ```golang
 package main
 
 import "github.com/toniphan21/go-bf"
 
-type YourHash struct {
-  count byte
-  size  byte
+type YourHasher struct {
+  keyCount byte
+  keySize  byte
 }
 
-func (y *YourHash) Equals(other bf.Hash) bool {
-  o, ok := other.(*YourHash)
+func (y *YourHasher) Equals(other bf.Hasher) bool {
+  o, ok := other.(*YourHasher)
   if !ok {
     return false
   }
   // check other params
-  return y.count == o.count && y.size == o.size
+  return y.keyCount == o.keyCount && y.keySize == o.keySize
 }
 
-func (y *YourHash) Hash(bytes []byte) []bf.Key {
-  // return an array of hash for given bytes input.
-  //   - length of the array is count - number of hash functions
-  //   - each hash need to >= size - minimum size of a hash in bits
-  return []bf.Key{}
+func (y *YourHasher) Hash(input []byte, count int) [][]bf.Key {
+  // return an array of a hash array for given bytes input.
+  //   - length of the array is count
+  //   - each of subarray will have length = keyCount - number of hash functions
+  //   - each hash need to >= keySize - minimum size of a hash in bits
+  // For example: given keyCount = 5, keySize = 16
+  //   - count = 1 requires you to returns:
+  //     [][]Key{
+  //       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+  //     }
+  //   - count = 2 requires you to returns:
+  //     [][]Key{
+  //       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+  //       { "key5: at lest 16 bits long", "key6:...", "key7:...", "key7:...", "key8:..."},
+  //     }
+  return [][]bf.Key{}
 }
 
-type YourHashFactory struct{}
+type YourHasherFactory struct{}
 
-func (y *YourHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Hash {
-  return &YourHash{
-    count: numberOfHashFunctions,
-    size:  hashSizeInBits,
+func (y *YourHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) bf.Hasher {
+  return &YourHasher{
+    keyCount: numberOfHashFunctions,
+    keySize:  hashSizeInBits,
   }
 }
 
 func main() {
   config := bf.WithAccuracy(0.01, 1_000_000)
-  filter := bf.Must(config, bf.WithHash(&YourHashFactory{}))
+  filter := bf.Must(config, bf.WithHasher(&YourHasherFactory{}))
 
   filter.Add([]byte("anything"))
   // ...

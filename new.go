@@ -3,21 +3,21 @@ package bf
 type Option struct {
 	config         Config
 	storageFactory StorageFactory
-	hashFactory    HashFactory
+	hasherFactory  HasherFactory
 }
 
 type OptionFunc func(option *Option)
 
 /*
 New BloomFilter instance with Config could be the built-in WithAccuracy or
-WithCapacity configuration. Options including WithStorage, WithHash or a
+WithCapacity configuration. Options including WithStorage, WithHasher or a
 built-in hash strategy WithSHA (default) and WithFNV.
 */
 func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
 	o := Option{
 		config:         config,
 		storageFactory: &memoryStorageFactory{},
-		hashFactory:    &shaHashFactory{},
+		hasherFactory:  &shaHasherFactory{},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -28,15 +28,15 @@ func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
 		return nil, err
 	}
 
-	hash := o.hashFactory.Make(config.NumberOfHashFunctions(), calcKeyMinSizeFromCapacity(config.StorageCapacity()))
+	hash := o.hasherFactory.Make(config.NumberOfHashFunctions(), calcKeyMinSizeFromCapacity(config.StorageCapacity()))
 
-	return &bloomFilter{storage: storage, hash: hash, count: 0}, nil
+	return &bloomFilter{storage: storage, hasher: hash, count: 0}, nil
 }
 
 /*
 Must create new BloomFilter instance with Config could be the built-in
 WithAccuracy or WithCapacity configuration. Options including WithStorage,
-WithHash or a built-in hash strategy WithSHA (default) and WithFNV.
+WithHasher or a built-in hash strategy WithSHA (default) and WithFNV.
 */
 func Must(config Config, opts ...OptionFunc) BloomFilter {
 	f, err := New(config, opts...)
@@ -52,20 +52,20 @@ func WithStorage(sf StorageFactory) OptionFunc {
 	}
 }
 
-func WithHash(hf HashFactory) OptionFunc {
+func WithHasher(hf HasherFactory) OptionFunc {
 	return func(o *Option) {
-		o.hashFactory = hf
+		o.hasherFactory = hf
 	}
 }
 
 func WithSHA() OptionFunc {
 	return func(o *Option) {
-		o.hashFactory = &shaHashFactory{}
+		o.hasherFactory = &shaHasherFactory{}
 	}
 }
 
 func WithFNV() OptionFunc {
 	return func(o *Option) {
-		o.hashFactory = &fnvHashFactory{}
+		o.hasherFactory = &fnvHasherFactory{}
 	}
 }

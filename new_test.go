@@ -40,12 +40,12 @@ func TestNew_CallsStorageFactoryAndReturnErrorIfExists(t *testing.T) {
 	}
 }
 
-func TestNew_CallsStorageFactoryAndHashFactory(t *testing.T) {
+func TestNew_CallsStorageFactoryAndHasherFactory(t *testing.T) {
 	cf := &dummyConfig{k: 10, capacity: 2000}
 	storage := &stubStorageFactory{}
-	hash := &stubHashFactory{}
+	hasher := &stubHasherFactory{}
 
-	f, err := New(cf, WithStorage(storage), WithHash(hash))
+	f, err := New(cf, WithStorage(storage), WithHasher(hasher))
 	if f == nil {
 		t.Errorf("expect filter is not nil but got nil")
 	}
@@ -56,11 +56,11 @@ func TestNew_CallsStorageFactoryAndHashFactory(t *testing.T) {
 	if storage.makeCapacity != cf.capacity {
 		t.Errorf("expect %d but got %d", cf.capacity, storage.makeCapacity)
 	}
-	if hash.makeK != cf.k {
-		t.Errorf("expect %d but got %d", cf.k, hash.makeK)
+	if hasher.makeK != cf.k {
+		t.Errorf("expect %d but got %d", cf.k, hasher.makeK)
 	}
-	if hash.makeSize != 11 {
-		t.Errorf("expect %d but got %d", 11, hash.makeSize)
+	if hasher.makeSize != 11 {
+		t.Errorf("expect %d but got %d", 11, hasher.makeSize)
 	}
 }
 
@@ -86,26 +86,26 @@ func TestWithStorage(t *testing.T) {
 	}
 }
 
-type stubHashFactory struct {
-	hash     Hash
+type stubHasherFactory struct {
+	hasher   Hasher
 	makeK    byte
 	makeSize byte
 }
 
-func (s *stubHashFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hash {
+func (s *stubHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hasher {
 	s.makeK = numberOfHashFunctions
 	s.makeSize = hashSizeInBits
-	return s.hash
+	return s.hasher
 }
 
-func TestWithHash(t *testing.T) {
+func TestWithHasher(t *testing.T) {
 	opt := &Option{}
-	dh := &stubHashFactory{}
-	fn := WithHash(dh)
+	dh := &stubHasherFactory{}
+	fn := WithHasher(dh)
 
 	fn(opt)
-	if opt.hashFactory != dh {
-		t.Errorf("Expected hash factory to be %v, got %v", dh, opt.hashFactory)
+	if opt.hasherFactory != dh {
+		t.Errorf("Expected hash factory to be %v, got %v", dh, opt.hasherFactory)
 	}
 }
 
@@ -114,9 +114,9 @@ func TestWithSHA(t *testing.T) {
 	fn := WithSHA()
 	fn(opt)
 
-	_, ok := opt.hashFactory.(*shaHashFactory)
+	_, ok := opt.hasherFactory.(*shaHasherFactory)
 	if !ok {
-		t.Errorf("Expected hash factory to be shaHashFactory, got %T", opt.hashFactory)
+		t.Errorf("Expected hash factory to be shaHasherFactory, got %T", opt.hasherFactory)
 	}
 }
 
@@ -125,9 +125,9 @@ func TestWithFNV(t *testing.T) {
 	fn := WithFNV()
 	fn(opt)
 
-	_, ok := opt.hashFactory.(*fnvHashFactory)
+	_, ok := opt.hasherFactory.(*fnvHasherFactory)
 	if !ok {
-		t.Errorf("Expected hash factory to be fnvHashFactory, got %T", opt.hashFactory)
+		t.Errorf("Expected hash factory to be fnvHasherFactory, got %T", opt.hasherFactory)
 	}
 }
 
