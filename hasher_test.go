@@ -2,6 +2,7 @@ package bf
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -245,6 +246,207 @@ func TestHasher_HashNTimes(t *testing.T) {
 			m.assertCalledWith(t, tc.expectedCalledWith)
 			if !bytes.Equal(tc.expected, result) {
 				t.Errorf("expected: %v, got: %v", tc.expected, result)
+			}
+		})
+	}
+}
+
+const hasherInput = "hello"
+
+func runTestHasherDoHash(t *testing.T, hasher hasher, hashFn func(*[]byte) []byte, h, h0, h1, h2, h3 string) {
+	cases := []struct {
+		name     string
+		input    string
+		n        byte
+		count    int
+		expected string
+	}{
+		{
+			name:     "count 1 - 1 time",
+			input:    hasherInput,
+			n:        1,
+			count:    1,
+			expected: h,
+		},
+		{
+			name:     "count 1 - 2 times",
+			input:    hasherInput,
+			n:        2,
+			count:    1,
+			expected: h + h0,
+		},
+		{
+			name:     "count 1 - 3 times",
+			input:    hasherInput,
+			n:        3,
+			count:    1,
+			expected: h + h0 + h1,
+		},
+		{
+			name:     "count 1 - 4 times",
+			input:    hasherInput,
+			n:        4,
+			count:    1,
+			expected: h + h0 + h1 + h2,
+		},
+		{
+			name:     "count 1 - 5 times",
+			input:    hasherInput,
+			n:        5,
+			count:    1,
+			expected: h + h0 + h1 + h2 + h3,
+		},
+		{
+			name:     "count 2 - 1 time",
+			input:    hasherInput,
+			n:        1,
+			count:    2,
+			expected: h + h0,
+		},
+		{
+			name:     "count 2 - 2 times",
+			input:    hasherInput,
+			n:        2,
+			count:    2,
+			expected: h + h0 + h1 + h2,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			hasher.keyCount = tc.n
+			r := hasher.makeKeySplitter(tc.count, []byte(tc.input), hashFn).Source
+
+			result := fmt.Sprintf("%x", r)
+			assertStringEqual(t, result, tc.expected)
+		})
+	}
+}
+
+func TestBuiltinHashers_Equals(t *testing.T) {
+	cases := []struct {
+		name                 string
+		leftImpl             string
+		leftHashSizeInBytes  int
+		leftCount            byte
+		leftSize             int
+		rightImpl            string
+		rightHashSizeInBytes int
+		rightCount           byte
+		rightSize            int
+		expected             bool
+	}{
+		{
+			name:      "not equals if not the same type - 1",
+			leftImpl:  "sha",
+			rightImpl: "fnv",
+			expected:  false,
+		},
+		{
+			name:      "not equals if not the same type - 2",
+			leftImpl:  "fnv",
+			rightImpl: "sha",
+			expected:  false,
+		},
+		{
+			name:                 "not equals if HashSizeInBytes are not the same - sha",
+			leftImpl:             "sha",
+			rightImpl:            "sha",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 2,
+			expected:             false,
+		},
+		{
+			name:                 "not equals if HashSizeInBytes are not the same - fnv",
+			leftImpl:             "fnv",
+			rightImpl:            "fnv",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 2,
+			expected:             false,
+		},
+		{
+			name:                 "not equals if Count are not the same - sha",
+			leftImpl:             "sha",
+			rightImpl:            "sha",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            1,
+			rightCount:           2,
+			expected:             false,
+		},
+		{
+			name:                 "not equals if Count are not the same - fnv",
+			leftImpl:             "fnv",
+			rightImpl:            "fnv",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            1,
+			rightCount:           2,
+			expected:             false,
+		},
+		{
+			name:                 "not equals if Size are not the same - sha",
+			leftImpl:             "sha",
+			rightImpl:            "sha",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            1,
+			rightCount:           1,
+			leftSize:             1,
+			rightSize:            2,
+			expected:             false,
+		},
+		{
+			name:                 "not equals if Size are not the same - fnv",
+			leftImpl:             "fnv",
+			rightImpl:            "fnv",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            1,
+			rightCount:           1,
+			leftSize:             1,
+			rightSize:            2,
+			expected:             false,
+		},
+		{
+			name:                 "equals if same type and same params - sha",
+			leftImpl:             "sha",
+			rightImpl:            "sha",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            2,
+			rightCount:           2,
+			leftSize:             3,
+			rightSize:            3,
+			expected:             true,
+		},
+		{
+			name:                 "equals if same type and same params - fnv",
+			leftImpl:             "fnv",
+			rightImpl:            "fnv",
+			leftHashSizeInBytes:  1,
+			rightHashSizeInBytes: 1,
+			leftCount:            2,
+			rightCount:           2,
+			leftSize:             3,
+			rightSize:            3,
+			expected:             true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mk := func(t string, h int, c byte, s int) Hasher {
+				if t == "sha" {
+					return &shaHasher{hasher{hashSizeInBytes: h, keyCount: c, keySize: s}}
+				}
+				return &fnvHasher{hasher{hashSizeInBytes: h, keyCount: c, keySize: s}}
+			}
+			left := mk(tc.leftImpl, tc.leftHashSizeInBytes, tc.leftCount, tc.leftSize)
+			right := mk(tc.rightImpl, tc.rightHashSizeInBytes, tc.rightCount, tc.rightSize)
+			result := left.Equals(right)
+			if result != tc.expected {
+				t.Errorf("expected %v, got %v", tc.expected, result)
 			}
 		})
 	}

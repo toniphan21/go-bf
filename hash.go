@@ -71,8 +71,6 @@ func (h *shaHash) Equals(other Hash) bool {
 	return o.genericHash == h.genericHash
 }
 
-const shaSize = 32
-
 func (h *shaHash) Hash(input []byte) []Key {
 	return h.genericHash.makeKeySplitter(input, h.doHash).Split()
 }
@@ -109,8 +107,6 @@ func (h *fnvHash) Equals(other Hash) bool {
 	}
 	return o.genericHash == h.genericHash
 }
-
-const fnvSize = 16
 
 func (h *fnvHash) Hash(input []byte) []Key {
 	return h.genericHash.makeKeySplitter(input, h.doHash).Split()

@@ -20,11 +20,11 @@ func TestKeySplitter_Split(t *testing.T) {
 			expected: []string{"0a000000", "0b000000", "00000000"},
 		},
 		{
-			name: "8 bits, 5 keys", source: shaRawHashHelloOneTime, size: 4, count: 5,
+			name: "8 bits, 5 keys", source: shaHello, size: 4, count: 5,
 			expected: []string{"0c000000", "02000000", "02000000", "0f000000", "0d000000"},
 		},
 		{
-			name: "3 bits, 2 keys", source: shaRawHashHelloOneTime, size: 3, count: 2,
+			name: "3 bits, 2 keys", source: shaHello, size: 3, count: 2,
 			expected: []string{
 				/*
 					source in hex:           2c.f2.4d.ba...
@@ -39,7 +39,7 @@ func TestKeySplitter_Split(t *testing.T) {
 			},
 		},
 		{
-			name: "11 bits, 2 keys", source: shaRawHashHelloOneTime, size: 11, count: 2,
+			name: "11 bits, 2 keys", source: shaHello, size: 11, count: 2,
 			expected: []string{
 				/*
 					source in hex:           2c.f2.4d.ba...
@@ -91,13 +91,13 @@ func TestKeySplitter_Split2(t *testing.T) {
 			},
 		},
 		{
-			name: "4 bits, 5 keys, count 1", source: shaRawHashHelloOneTime, count: 1, keySize: 4, keyCount: 5,
+			name: "4 bits, 5 keys, count 1", source: shaHello, count: 1, keySize: 4, keyCount: 5,
 			expected: [][]string{
 				{"0c000000", "02000000", "02000000", "0f000000", "0d000000"},
 			},
 		},
 		{
-			name: "3 bits, 2 keys, count 1", source: shaRawHashHelloOneTime, count: 1, keySize: 3, keyCount: 2,
+			name: "3 bits, 2 keys, count 1", source: shaHello, count: 1, keySize: 3, keyCount: 2,
 			expected: [][]string{
 				/*
 					source in hex:           2c.f2.4d.ba...
@@ -112,7 +112,7 @@ func TestKeySplitter_Split2(t *testing.T) {
 			},
 		},
 		{
-			name: "11 bits, 2 keys, count 1", source: shaRawHashHelloOneTime, count: 1, keySize: 11, keyCount: 2,
+			name: "11 bits, 2 keys, count 1", source: shaHello, count: 1, keySize: 11, keyCount: 2,
 			expected: [][]string{
 				/*
 					source in hex:           2c.f2.4d.ba...
@@ -141,7 +141,7 @@ func TestKeySplitter_Split2(t *testing.T) {
 			},
 		},
 		{
-			name: "4 bits, 5 keys, count 2", source: shaRawHashHelloOneTime, count: 2, keySize: 4, keyCount: 5,
+			name: "4 bits, 5 keys, count 2", source: shaHello, count: 2, keySize: 4, keyCount: 5,
 			expected: [][]string{
 				{"0c000000", "02000000", "02000000", "0f000000", "0d000000"},
 				{"04000000", "0a000000", "0b000000", "0f000000", "05000000"},
