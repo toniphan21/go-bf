@@ -32,7 +32,6 @@ func (g *genericHash) makeKeySplitter(input []byte, hashFn func(*[]byte) []byte)
 	}
 	return &KeySplitter{
 		Source:   g.hashNTimes(byte(times), &input, hashFn),
-		Length:   times * hashSizeInBits,
 		KeyCount: count,
 		KeySize:  g.size,
 	}
