@@ -1,12 +1,16 @@
 package bf
 
+import "math"
+
+const bitsetDataSize = 32 << (^uint(0) >> 63) // 32 or 64
+
 type bitset struct {
-	data     []byte
+	data     []uint
 	capacity uint32
 }
 
 func newBitset(n, capacity uint32) *bitset {
-	return &bitset{data: make([]byte, n), capacity: capacity}
+	return &bitset{data: make([]uint, n), capacity: capacity}
 }
 
 func (b *bitset) Capacity() uint32 {
@@ -29,7 +33,7 @@ func (b *bitset) Clear(index uint32) {
 	}
 
 	n, m := b.indexing(index)
-	d := b.data[n] & (m ^ 0xFF)
+	d := b.data[n] & (m ^ math.MaxUint)
 	b.data[n] = d
 }
 
@@ -51,9 +55,9 @@ func (b *bitset) Equals(other Storage) bool {
 	return o.capacity == b.capacity
 }
 
-func (b *bitset) indexing(i uint32) (uint32, byte) {
-	n := i / 8
-	m := i % 8
+func (b *bitset) indexing(i uint32) (uint32, uint) {
+	n := i / bitsetDataSize
+	m := i % bitsetDataSize
 
 	return n, 1 << m
 }

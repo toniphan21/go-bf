@@ -7,7 +7,7 @@ type BloomFilter interface {
 
 	Exists(item []byte) bool
 
-	Count() uint
+	Count() int
 
 	Storage() Storage
 
@@ -24,7 +24,7 @@ var ErrHashDifference = errors.New("hash is not the same")
 type bloomFilter struct {
 	hash    Hash
 	storage Storage
-	count   uint
+	count   int
 }
 
 func (b *bloomFilter) Add(item []byte) {
@@ -47,7 +47,7 @@ func (b *bloomFilter) Exists(item []byte) bool {
 	return true
 }
 
-func (b *bloomFilter) Count() uint {
+func (b *bloomFilter) Count() int {
 	return b.count
 }
 
@@ -78,6 +78,7 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 			b.storage.Clear(i)
 		}
 	}
+	b.count = -1
 	return nil
 }
 
@@ -100,5 +101,6 @@ func (b *bloomFilter) Union(other BloomFilter) error {
 			b.storage.Set(i)
 		}
 	}
+	b.count = -1
 	return nil
 }

@@ -37,7 +37,7 @@ func (msf *memoryStorageFactory) Make(capacity uint32) (Storage, error) {
 		return nil, ErrInvalidStorageCapacity
 	}
 
-	n, m := capacity/8, capacity%8
+	n, m := capacity/bitsetDataSize, capacity%bitsetDataSize
 	if m > 0 {
 		n += 1
 	}

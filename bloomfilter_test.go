@@ -247,13 +247,17 @@ func TestIntersect_UseClearToChangeDataOfCurrentInstance(t *testing.T) {
 		t.Errorf("expected nil, got %v", err)
 	}
 
+	if a.count != -1 {
+		t.Errorf("expected -1, got %v", a.count)
+	}
+
 	storage.assertSetCalledWith(t, []uint32{})
 	storage.assertClearCalledWith(t, []uint32{0, 1, 2})
 }
 
 func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
-	as := &bitset{data: []byte{0, 2, 0b00110011}}
-	bs := &bitset{data: []byte{1, 0, 0b01010101}}
+	as := &bitset{data: []uint{0, 2, 0b00110011}}
+	bs := &bitset{data: []uint{1, 0, 0b01010101}}
 
 	a := bloomFilter{storage: as, hash: &mockHash{hash: []Key{1, 2}}}
 	b := bloomFilter{storage: bs, hash: &mockHash{hash: []Key{1, 2}}}
@@ -312,13 +316,17 @@ func TestUnion_UseSetToChangeDataOfCurrentInstance(t *testing.T) {
 		t.Errorf("expected nil, got %v", err)
 	}
 
+	if a.count != -1 {
+		t.Errorf("expected -1, got %v", a.count)
+	}
+
 	storage.assertClearCalledWith(t, []uint32{})
 	storage.assertSetCalledWith(t, []uint32{1, 2, 3, 4})
 }
 
 func TestUnion_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
-	as := &bitset{data: []byte{0, 0, 2, 0b00110011}}
-	bs := &bitset{data: []byte{0, 1, 0, 0b01010101}}
+	as := &bitset{data: []uint{0, 0, 2, 0b00110011}}
+	bs := &bitset{data: []uint{0, 1, 0, 0b01010101}}
 
 	a := bloomFilter{storage: as, hash: &mockHash{hash: []Key{1, 2}}}
 	b := bloomFilter{storage: bs, hash: &mockHash{hash: []Key{1, 2}}}

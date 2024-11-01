@@ -21,13 +21,13 @@ func TestMemoryStorageFactory_Make(t *testing.T) {
 		{
 			name:             "rounded capacity",
 			capacity:         1024,
-			expectedSize:     128,
+			expectedSize:     1024 / bitsetDataSize,
 			expectedCapacity: 1024,
 		},
 		{
 			name:             "need to be rounded capacity",
 			capacity:         1020,
-			expectedSize:     128,
+			expectedSize:     1024 / bitsetDataSize,
 			expectedCapacity: 1020,
 		},
 	}

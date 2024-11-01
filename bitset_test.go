@@ -15,22 +15,22 @@ func TestBitset(t *testing.T) {
 		end      uint32
 	}{
 		{
-			name: "one byte", size: 1, capacity: 5, start: 0, end: 8,
+			name: "one word", size: 1, capacity: 5, start: 0, end: 8,
 		},
 		{
-			name: "one byte full", size: 1, capacity: 8, start: 0, end: 8,
+			name: "one word full", size: 1, capacity: bitsetDataSize, start: 0, end: bitsetDataSize,
 		},
 		{
-			name: "two bytes", size: 2, capacity: 10, start: 0, end: 12,
+			name: "two words", size: 2, capacity: bitsetDataSize + 2, start: 0, end: bitsetDataSize*2 + 4,
 		},
 		{
-			name: "two bytes full", size: 2, capacity: 16, start: 0, end: 16,
+			name: "two words full", size: 2, capacity: bitsetDataSize * 2, start: 0, end: bitsetDataSize * 2,
 		},
 		{
-			name: "100 bytes", size: 100, capacity: 700, start: 0, end: 810,
+			name: "100 words", size: 100, capacity: bitsetDataSize * 90, start: 0, end: bitsetDataSize * 101,
 		},
 		{
-			name: "100 bytes full", size: 100, capacity: 800, start: 0, end: 810,
+			name: "100 words full", size: 100, capacity: bitsetDataSize * 100, start: 0, end: bitsetDataSize * 110,
 		},
 	}
 
@@ -57,12 +57,12 @@ func TestBitset(t *testing.T) {
 				assertBoolForIndex(t, i, before, false)
 				if i < tc.capacity {
 					assertBoolForIndex(t, i, after, true)
-					chars := make([]string, tc.size*8)
+					chars := make([]string, tc.size*bitsetDataSize)
 					for ci := range chars {
 						chars[ci] = "0"
 					}
 					chars[i] = "1"
-					assertStringEqual(t, sprintfBytesInBinary(&b.data), strings.Join(chars, ""))
+					assertStringEqual(t, sprintfUintInBinary(&b.data), strings.Join(chars, ""))
 				} else {
 					assertBoolForIndex(t, i, after, false)
 				}
@@ -116,7 +116,7 @@ func TestBitset_Equals_ReturnsTrueIfItIsABitsetAndHaveSameCapacity(t *testing.T)
 }
 
 func TestBitset_Intersect_DoesNothingIfStorageIsNotABitset(t *testing.T) {
-	b := &bitset{data: []byte{1, 2}}
+	b := &bitset{data: []uint{1, 2}}
 	o := &mockStorage{getData: map[uint32]bool{}}
 	b.Intersect(o)
 	if b.data[0] != 1 || b.data[1] != 2 {
@@ -125,8 +125,8 @@ func TestBitset_Intersect_DoesNothingIfStorageIsNotABitset(t *testing.T) {
 }
 
 func TestBitset_Intersect(t *testing.T) {
-	a := &bitset{data: []byte{0, 2, 0b00110011}}
-	b := &bitset{data: []byte{1, 0, 0b01010101}}
+	a := &bitset{data: []uint{0, 2, 0b00110011}}
+	b := &bitset{data: []uint{1, 0, 0b01010101}}
 	a.Intersect(b)
 	if a.data[0] != 0 || a.data[1] != 0 || a.data[2] != 0b00010001 {
 		t.Errorf("Intersect should apply AND operator to all bytes")
@@ -137,7 +137,7 @@ func TestBitset_Intersect(t *testing.T) {
 }
 
 func TestBitset_Union_DoesNothingIfStorageIsNotABitset(t *testing.T) {
-	b := &bitset{data: []byte{1, 2}}
+	b := &bitset{data: []uint{1, 2}}
 	o := &mockStorage{getData: map[uint32]bool{}}
 	b.Union(o)
 	if b.data[0] != 1 || b.data[1] != 2 {
@@ -146,8 +146,8 @@ func TestBitset_Union_DoesNothingIfStorageIsNotABitset(t *testing.T) {
 }
 
 func TestBitset_Union(t *testing.T) {
-	a := &bitset{data: []byte{0, 0, 2, 0b00110011}}
-	b := &bitset{data: []byte{0, 1, 0, 0b01010101}}
+	a := &bitset{data: []uint{0, 0, 2, 0b00110011}}
+	b := &bitset{data: []uint{0, 1, 0, 0b01010101}}
 	a.Union(b)
 	if a.data[0] != 0 || a.data[1] != 1 || a.data[2] != 2 && a.data[3] != 0b01110111 {
 		t.Errorf("Intersect should apply OR operator to all bytes")
@@ -158,13 +158,21 @@ func TestBitset_Union(t *testing.T) {
 }
 
 func reverseByteBinaryString(b string) string {
-	return string([]byte{b[7], b[6], b[5], b[4], b[3], b[2], b[1], b[0]})
+	n := len(b)
+	sb := strings.Builder{}
+	sb.Grow(n)
+
+	for i := n - 1; i >= 0; i-- {
+		sb.WriteByte(b[i])
+	}
+	return sb.String()
 }
 
-func sprintfBytesInBinary(b *[]byte) string {
+func sprintfUintInBinary(b *[]uint) string {
 	result := make([]string, len(*b))
+	format := fmt.Sprintf("%%0%db", bitsetDataSize)
 	for i, bt := range *b {
-		result[i] = reverseByteBinaryString(fmt.Sprintf("%08b", bt))
+		result[i] = reverseByteBinaryString(fmt.Sprintf(format, bt))
 	}
 	return strings.Join(result, "")
 }
