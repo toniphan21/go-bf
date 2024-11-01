@@ -16,7 +16,11 @@ func (m *mockHashFn) Hash(input *[]byte) []byte {
 	if m.hashCalledWith == nil {
 		m.hashCalledWith = make(map[int][]byte)
 	}
-	m.hashCalledWith[m.hashCalledCount-1] = bytes.Clone(*input)
+	clone := make([]byte, len(*input))
+	for i := 0; i < len(clone); i++ {
+		clone[i] = (*input)[i]
+	}
+	m.hashCalledWith[m.hashCalledCount-1] = clone
 
 	if m.hashReturn != nil {
 		r, ok := m.hashReturn[m.hashCalledCount-1]
