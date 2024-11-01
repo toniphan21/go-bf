@@ -254,11 +254,11 @@ func (y *YourHash) Equals(other bf.Hash) bool {
   return y.count == o.count && y.size == o.size
 }
 
-func (y *YourHash) Hash(bytes []byte) []uint32 {
+func (y *YourHash) Hash(bytes []byte) []bf.Key {
   // return an array of hash for given bytes input.
   //   - length of the array is count - number of hash functions
   //   - each hash need to >= size - minimum size of a hash in bits
-  return []uint32{}
+  return []bf.Key{}
 }
 
 type YourHashFactory struct{}

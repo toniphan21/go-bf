@@ -30,7 +30,7 @@ type bloomFilter struct {
 func (b *bloomFilter) Add(item []byte) {
 	keys := b.hash.Hash(item)
 	for _, key := range keys {
-		index := key % b.storage.Capacity()
+		index := uint32(key) % b.storage.Capacity()
 		b.storage.Set(index)
 	}
 	b.count++
@@ -39,7 +39,7 @@ func (b *bloomFilter) Add(item []byte) {
 func (b *bloomFilter) Exists(item []byte) bool {
 	keys := b.hash.Hash(item)
 	for _, key := range keys {
-		index := key % b.storage.Capacity()
+		index := uint32(key) % b.storage.Capacity()
 		if !b.storage.Get(index) {
 			return false
 		}

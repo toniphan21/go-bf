@@ -2,44 +2,17 @@ package bf
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
 	"hash/fnv"
 )
 
 type Hash interface {
-	Hash([]byte) []uint32
+	Hash([]byte) []Key
 
 	Equals(other Hash) bool
 }
 
 type HashFactory interface {
 	Make(numberOfHashFunctions, hashSizeInBits byte) Hash
-}
-
-type KeySplitter struct {
-	Source   []byte
-	Length   int
-	KeyCount int
-	KeySize  int
-}
-
-func (k *KeySplitter) Split() []uint32 {
-	bs := bitset{
-		data:     k.Source,
-		capacity: uint32(k.Length),
-	}
-	result := make([]uint32, k.KeyCount)
-	for i := 0; i < k.KeyCount; i++ {
-		rbs := bitset{data: make([]byte, 4), capacity: 32}
-		for j := 0; j < k.KeySize; j++ {
-			index := uint32(i*k.KeySize + j)
-			if bs.Get(index) {
-				rbs.Set(uint32(j))
-			}
-		}
-		result[i] = binary.LittleEndian.Uint32(rbs.data)
-	}
-	return result
 }
 
 type genericHash struct {
@@ -101,7 +74,7 @@ func (h *shaHash) Equals(other Hash) bool {
 
 const shaSize = 32
 
-func (h *shaHash) Hash(input []byte) []uint32 {
+func (h *shaHash) Hash(input []byte) []Key {
 	return h.genericHash.makeKeySplitter(input, h.doHash).Split()
 }
 
@@ -140,7 +113,7 @@ func (h *fnvHash) Equals(other Hash) bool {
 
 const fnvSize = 16
 
-func (h *fnvHash) Hash(input []byte) []uint32 {
+func (h *fnvHash) Hash(input []byte) []Key {
 	return h.genericHash.makeKeySplitter(input, h.doHash).Split()
 }
 

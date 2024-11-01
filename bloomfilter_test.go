@@ -64,10 +64,10 @@ func (m *mockStorage) assertClearCalledWith(t *testing.T, indices []uint32) {
 
 type mockHash struct {
 	hashBytes []byte
-	hash      []uint32
+	hash      []Key
 }
 
-func (m *mockHash) Hash(bytes []byte) []uint32 {
+func (m *mockHash) Hash(bytes []byte) []Key {
 	m.hashBytes = bytes
 
 	return m.hash
@@ -81,7 +81,7 @@ func (m *mockHash) Equals(other Hash) bool {
 	return isArrayEquals(o.hashBytes, m.hashBytes) && isArrayEquals(o.hash, m.hash)
 }
 
-func isArrayEquals[T byte | uint32](a, b []T) bool {
+func isArrayEquals[T byte | Key](a, b []T) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -112,7 +112,7 @@ func (m *mockHash) assertHashCalledWith(t *testing.T, input []byte) {
 }
 
 func TestBloomFilter_Add(t *testing.T) {
-	hash := &mockHash{hash: []uint32{11, 3, 55, 77}}
+	hash := &mockHash{hash: []Key{11, 3, 55, 77}}
 	storage := &mockStorage{capacity: 10}
 	f := bloomFilter{hash: hash, storage: storage}
 	f.Add([]byte("input"))
@@ -125,7 +125,7 @@ func TestBloomFilter_Add(t *testing.T) {
 }
 
 func TestBloomFilter_Count(t *testing.T) {
-	hash := &mockHash{hash: []uint32{11, 3, 55, 77}}
+	hash := &mockHash{hash: []Key{11, 3, 55, 77}}
 	storage := &mockStorage{capacity: 10}
 	f := bloomFilter{hash: hash, storage: storage}
 	if f.Count() != 0 {
@@ -146,25 +146,25 @@ func TestBloomFilter_Count(t *testing.T) {
 func TestBloomFilter_Exists(t *testing.T) {
 	cases := []struct {
 		name     string
-		hash     []uint32
+		hash     []Key
 		data     map[uint32]bool
 		expected bool
 	}{
 		{
 			name:     "no cell set",
-			hash:     []uint32{1, 2},
+			hash:     []Key{1, 2},
 			data:     map[uint32]bool{0: false, 1: false, 2: false},
 			expected: false,
 		},
 		{
 			name:     "1 cell set",
-			hash:     []uint32{1, 2},
+			hash:     []Key{1, 2},
 			data:     map[uint32]bool{0: false, 1: true, 2: false},
 			expected: false,
 		},
 		{
 			name:     "2 cells set",
-			hash:     []uint32{1, 2},
+			hash:     []Key{1, 2},
 			data:     map[uint32]bool{0: false, 1: true, 2: true},
 			expected: true,
 		},
@@ -197,7 +197,7 @@ func TestBloomFilter_Storage(t *testing.T) {
 }
 
 func TestBloomFilter_Hash(t *testing.T) {
-	hash := &mockHash{hash: []uint32{11, 3, 55, 77}}
+	hash := &mockHash{hash: []Key{11, 3, 55, 77}}
 	f := bloomFilter{hash: hash}
 
 	result := f.Hash()
@@ -221,8 +221,8 @@ func TestIntersect_ReturnsErrStorageAreNotEquals(t *testing.T) {
 }
 
 func TestIntersect_ReturnsErrIfNotHaveTheSameHash(t *testing.T) {
-	a := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{2, 1}}}
+	a := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []Key{2, 1}}}
 	err := a.Intersect(&b)
 
 	if err == nil {
@@ -239,8 +239,8 @@ func TestIntersect_UseClearToChangeDataOfCurrentInstance(t *testing.T) {
 	bd := map[uint32]bool{0: false, 1: true, 2: false, 3: true, 4: true}
 	storage := &mockStorage{capacity: 5, getData: ad}
 
-	a := bloomFilter{storage: storage, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: &mockStorage{capacity: 5, getData: bd}, hash: &mockHash{hash: []uint32{1, 2}}}
+	a := bloomFilter{storage: storage, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 5, getData: bd}, hash: &mockHash{hash: []Key{1, 2}}}
 	err := a.Intersect(&b)
 
 	if err != nil {
@@ -255,8 +255,8 @@ func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) 
 	as := &bitset{data: []byte{0, 2, 0b00110011}}
 	bs := &bitset{data: []byte{1, 0, 0b01010101}}
 
-	a := bloomFilter{storage: as, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: bs, hash: &mockHash{hash: []uint32{1, 2}}}
+	a := bloomFilter{storage: as, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: bs, hash: &mockHash{hash: []Key{1, 2}}}
 	err := a.Intersect(&b)
 
 	if err != nil {
@@ -286,8 +286,8 @@ func TestUnion_ReturnsErrStorageAreNotEquals(t *testing.T) {
 }
 
 func TestUnion_ReturnsErrIfNotHaveTheSameHash(t *testing.T) {
-	a := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []uint32{2, 1}}}
+	a := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 1}, hash: &mockHash{hash: []Key{2, 1}}}
 	err := a.Union(&b)
 
 	if err == nil {
@@ -304,8 +304,8 @@ func TestUnion_UseSetToChangeDataOfCurrentInstance(t *testing.T) {
 	bd := map[uint32]bool{0: false, 1: true, 2: false, 3: true, 4: true}
 	storage := &mockStorage{capacity: 5, getData: ad}
 
-	a := bloomFilter{storage: storage, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: &mockStorage{capacity: 5, getData: bd}, hash: &mockHash{hash: []uint32{1, 2}}}
+	a := bloomFilter{storage: storage, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: &mockStorage{capacity: 5, getData: bd}, hash: &mockHash{hash: []Key{1, 2}}}
 	err := a.Union(&b)
 
 	if err != nil {
@@ -320,8 +320,8 @@ func TestUnion_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
 	as := &bitset{data: []byte{0, 0, 2, 0b00110011}}
 	bs := &bitset{data: []byte{0, 1, 0, 0b01010101}}
 
-	a := bloomFilter{storage: as, hash: &mockHash{hash: []uint32{1, 2}}}
-	b := bloomFilter{storage: bs, hash: &mockHash{hash: []uint32{1, 2}}}
+	a := bloomFilter{storage: as, hash: &mockHash{hash: []Key{1, 2}}}
+	b := bloomFilter{storage: bs, hash: &mockHash{hash: []Key{1, 2}}}
 	err := a.Union(&b)
 
 	if err != nil {
