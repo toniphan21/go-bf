@@ -32,7 +32,7 @@ func (s *shaHasher) doHash(input *[]byte) []byte {
 
 type shaHasherFactory struct{}
 
-func (s *shaHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hasher {
+func (s shaHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hasher {
 	return &shaHasher{
 		hasher: hasher{
 			hashSizeInBytes: shaSize,

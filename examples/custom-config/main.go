@@ -17,6 +17,10 @@ func (y *YourConfig) StorageCapacity() uint32 {
 	return 1_000_000
 }
 
+func (y *YourConfig) KeySize() byte {
+	return 32
+}
+
 func main() {
 	config := &YourConfig{}
 	filter, err := bf.New(config)

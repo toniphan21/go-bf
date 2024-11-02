@@ -11,6 +11,10 @@ type dummyConfig struct {
 	capacity uint32
 }
 
+func (d *dummyConfig) KeySize() byte {
+	return calcKeyMinSizeFromCapacity(d.capacity)
+}
+
 func (d *dummyConfig) Info() string {
 	return d.info
 }
@@ -114,7 +118,7 @@ func TestWithSHA(t *testing.T) {
 	fn := WithSHA()
 	fn(opt)
 
-	_, ok := opt.hasherFactory.(*shaHasherFactory)
+	_, ok := opt.hasherFactory.(shaHasherFactory)
 	if !ok {
 		t.Errorf("Expected hash factory to be shaHasherFactory, got %T", opt.hasherFactory)
 	}
@@ -125,7 +129,7 @@ func TestWithFNV(t *testing.T) {
 	fn := WithFNV()
 	fn(opt)
 
-	_, ok := opt.hasherFactory.(*fnvHasherFactory)
+	_, ok := opt.hasherFactory.(fnvHasherFactory)
 	if !ok {
 		t.Errorf("Expected hash factory to be fnvHasherFactory, got %T", opt.hasherFactory)
 	}

@@ -15,6 +15,7 @@ type Config interface {
 	Info() string
 	NumberOfHashFunctions() byte
 	StorageCapacity() uint32
+	KeySize() byte
 }
 
 func calcKeyMinSizeFromCapacity(capacity uint32) byte {
@@ -35,19 +36,19 @@ type config struct {
 	storageCapacity uint32
 }
 
-func (c *config) NumberOfHashFunctions() byte {
+func (c config) NumberOfHashFunctions() byte {
 	return c.k
 }
 
-func (c *config) StorageCapacity() uint32 {
+func (c config) StorageCapacity() uint32 {
 	return c.storageCapacity
 }
 
-func (c *config) keySize() byte {
+func (c config) KeySize() byte {
 	return calcKeyMinSizeFromCapacity(c.storageCapacity)
 }
 
-func (c *config) Info() string {
+func (c config) Info() string {
 	cB := c.storageCapacity / 8
 	d := c.storageCapacity % 8
 	if d > 0 {
@@ -64,7 +65,7 @@ func (c *config) Info() string {
 		info = append(info, fmt.Sprintf("  - Expected number of items: %d", c.n))
 		info = append(info, fmt.Sprintf("  - Bits per item: %#.3f", c.m))
 		info = append(info, fmt.Sprintf("  - Number of hash functions: %v", c.k))
-		info = append(info, fmt.Sprintf("  - Size in bits of each has function: %v", c.keySize()))
+		info = append(info, fmt.Sprintf("  - Size in bits of each has function: %v", c.KeySize()))
 
 		info = append(info, fmt.Sprintf("  - Storage capacity: %v bits = %v bytes = %#.2fKB = %#.2fMB", c.storageCapacity, cB, cKB, cMB))
 		info = append(info, fmt.Sprintf("  - Estimated error rate: %#.5f%%", c.e*100))
@@ -72,7 +73,7 @@ func (c *config) Info() string {
 		info = append(info, "Config WithCapacity()")
 		info = append(info, fmt.Sprintf("  - Storage capacity: %v bits = %v bytes = %#.2fKB = %#.2fMB", c.storageCapacity, cB, cKB, cMB))
 		info = append(info, fmt.Sprintf("  - Number of hash functions: %v", c.k))
-		info = append(info, fmt.Sprintf("  - Size in bits of each has function: %v", c.keySize()))
+		info = append(info, fmt.Sprintf("  - Size in bits of each has function: %v", c.KeySize()))
 
 		log := int(math.Ceil(math.Log10(float64(c.storageCapacity))))
 		info = append(info, fmt.Sprintf("  - Estimated error rate by n - number of added items:"))
@@ -114,7 +115,7 @@ func WithAccuracy(errorRate float64, numberOfItems uint32) Config {
 	capacity := uint32(math.Ceil(noi * bitPerItem))
 
 	nK := byte(math.Ceil(k))
-	return &config{
+	return config{
 		mode:            "accuracy",
 		k:               nK,
 		m:               bitPerItem,
@@ -133,7 +134,7 @@ func WithCapacity(capacityInBits uint32, numberOfHashFunctions byte) Config {
 		numberOfHashFunctions = DefaultNumberOfHasFunction
 	}
 
-	return &config{
+	return config{
 		mode:            "capacity",
 		k:               numberOfHashFunctions,
 		storageCapacity: capacityInBits,

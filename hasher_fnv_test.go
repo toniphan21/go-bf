@@ -113,7 +113,7 @@ func TestFnvHasher_doHash(t *testing.T) {
 }
 
 func TestFnvHasherFactory_Make(t *testing.T) {
-	f := &fnvHasherFactory{}
+	f := fnvHasherFactory{}
 	r := f.Make(5, 10)
 
 	result, ok := r.(*fnvHasher)

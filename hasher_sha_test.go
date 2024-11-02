@@ -113,7 +113,7 @@ func TestShaHasher_doHash(t *testing.T) {
 }
 
 func TestShaHasherFactory_Make(t *testing.T) {
-	f := &shaHasherFactory{}
+	f := shaHasherFactory{}
 	r := f.Make(5, 10)
 
 	result, ok := r.(*shaHasher)

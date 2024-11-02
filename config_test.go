@@ -96,7 +96,7 @@ func TestWithAccuracy(t *testing.T) {
 				t.Errorf("got %v, want %v", c.NumberOfHashFunctions(), tc.expectedK)
 			}
 
-			cf, ok := c.(*config)
+			cf, ok := c.(config)
 			if !ok {
 				t.Errorf("%v is not instance of config", c)
 			}
@@ -111,11 +111,11 @@ func TestWithAccuracy(t *testing.T) {
 }
 
 func assertConfigEqual(t *testing.T, result Config, expected config) {
-	c, ok := result.(*config)
+	c, ok := result.(config)
 	if !ok {
 		t.Errorf("%v is not instance of config", result)
 	}
-	if *c != expected {
+	if c != expected {
 		t.Errorf("expected %v, got %v", expected, c)
 	}
 }

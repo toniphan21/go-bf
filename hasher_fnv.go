@@ -29,7 +29,7 @@ func (s *fnvHasher) doHash(input *[]byte) []byte {
 
 type fnvHasherFactory struct{}
 
-func (s *fnvHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hasher {
+func (s fnvHasherFactory) Make(numberOfHashFunctions, hashSizeInBits byte) Hasher {
 	return &fnvHasher{
 		hasher: hasher{
 			hashSizeInBytes: fnvSize,

@@ -16,21 +16,25 @@ built-in hash strategy WithSHA (default) and WithFNV.
 func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
 	o := Option{
 		config:         config,
-		storageFactory: &memoryStorageFactory{},
-		hasherFactory:  &shaHasherFactory{},
+		storageFactory: memoryStorageFactory{},
+		hasherFactory:  shaHasherFactory{},
 	}
 	for _, opt := range opts {
 		opt(&o)
 	}
 
-	storage, err := o.storageFactory.Make(config.StorageCapacity())
+	return newBloomFilter(o)
+}
+
+func newBloomFilter(o Option) (BloomFilter, error) {
+	storage, err := o.storageFactory.Make(o.config.StorageCapacity())
 	if err != nil {
 		return nil, err
 	}
 
-	hash := o.hasherFactory.Make(config.NumberOfHashFunctions(), calcKeyMinSizeFromCapacity(config.StorageCapacity()))
+	hash := o.hasherFactory.Make(o.config.NumberOfHashFunctions(), o.config.KeySize())
 
-	return &bloomFilter{storage: storage, hasher: hash, count: 0}, nil
+	return &bloomFilter{option: o, storage: storage, hasher: hash, count: 0}, nil
 }
 
 /*
@@ -60,12 +64,12 @@ func WithHasher(hf HasherFactory) OptionFunc {
 
 func WithSHA() OptionFunc {
 	return func(o *Option) {
-		o.hasherFactory = &shaHasherFactory{}
+		o.hasherFactory = shaHasherFactory{}
 	}
 }
 
 func WithFNV() OptionFunc {
 	return func(o *Option) {
-		o.hasherFactory = &fnvHasherFactory{}
+		o.hasherFactory = fnvHasherFactory{}
 	}
 }

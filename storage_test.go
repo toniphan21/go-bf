@@ -34,7 +34,7 @@ func TestMemoryStorageFactory_Make(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			f := &memoryStorageFactory{}
+			f := memoryStorageFactory{}
 			r, err := f.Make(tc.capacity)
 
 			if tc.expectedErr != nil {

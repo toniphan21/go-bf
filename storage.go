@@ -32,7 +32,7 @@ type StorageFactory interface {
 
 type memoryStorageFactory struct{}
 
-func (msf *memoryStorageFactory) Make(capacity uint32) (Storage, error) {
+func (msf memoryStorageFactory) Make(capacity uint32) (Storage, error) {
 	if capacity <= 0 {
 		return nil, ErrInvalidStorageCapacity
 	}

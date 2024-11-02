@@ -22,6 +22,7 @@ var ErrStorageDifference = errors.New("storage is not the same")
 var ErrHasherDifference = errors.New("hasher is not the same")
 
 type bloomFilter struct {
+	option  Option
 	hasher  Hasher
 	storage Storage
 	count   int
