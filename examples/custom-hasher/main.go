@@ -24,12 +24,12 @@ func (y *YourHasher) Hash(input []byte, count int) [][]bf.Key {
 	// For example: given keyCount = 5, keySize = 16
 	//   - count = 1 requires you to returns:
 	//     [][]Key{
-	//       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+	//       { "key0: at least 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
 	//     }
 	//   - count = 2 requires you to returns:
 	//     [][]Key{
-	//       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
-	//       { "key5: at lest 16 bits long", "key6:...", "key7:...", "key7:...", "key8:..."},
+	//       { "key0: at least 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+	//       { "key5: at least 16 bits long", "key6:...", "key7:...", "key7:...", "key8:..."},
 	//     }
 	return [][]bf.Key{}
 }

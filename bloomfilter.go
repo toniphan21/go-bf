@@ -11,7 +11,7 @@ type BloomFilter interface {
 
 	Storage() Storage
 
-	Hash() Hasher
+	Hasher() Hasher
 
 	Intersect(other BloomFilter) error
 
@@ -55,7 +55,7 @@ func (b *bloomFilter) Storage() Storage {
 	return b.storage
 }
 
-func (b *bloomFilter) Hash() Hasher {
+func (b *bloomFilter) Hasher() Hasher {
 	return b.hasher
 }
 
@@ -63,7 +63,7 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 	if !b.storage.Equals(other.Storage()) {
 		return ErrStorageDifference
 	}
-	if !b.hasher.Equals(other.Hash()) {
+	if !b.hasher.Equals(other.Hasher()) {
 		return ErrHasherDifference
 	}
 
@@ -86,7 +86,7 @@ func (b *bloomFilter) Union(other BloomFilter) error {
 	if !b.storage.Equals(other.Storage()) {
 		return ErrStorageDifference
 	}
-	if !b.hasher.Equals(other.Hash()) {
+	if !b.hasher.Equals(other.Hasher()) {
 		return ErrHasherDifference
 	}
 

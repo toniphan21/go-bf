@@ -215,11 +215,11 @@ func TestBloomFilter_Storage(t *testing.T) {
 	}
 }
 
-func TestBloomFilter_Hash(t *testing.T) {
+func TestBloomFilter_Hasher(t *testing.T) {
 	hash := &mockHasher{hash: [][]Key{{11, 3, 55, 77}}}
 	f := bloomFilter{hasher: hash}
 
-	result := f.Hash()
+	result := f.Hasher()
 	if result != hash {
 		t.Errorf("expected %v, got %v", hash, result)
 	}

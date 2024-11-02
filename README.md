@@ -71,11 +71,11 @@ The `BloomFilter` interface has 7 main methods:
 |--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Add([]byte)`                  | Add an item into the filter                                                                                                                         |
 | `Exists([]byte) bool`          | Check existence of an item in the filter                                                                                                            |
-| `Count() int`                  | Get number of items added into the filter. Return -1 if not sure (for example after using `Intersect()` or `Union()`                                 |
+| `Count() int`                  | Get number of items added into the filter. Return -1 if not sure (for example after using `Intersect()` or `Union()`                                |
 | `Intersect(BloomFilter) error` | Intersect with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not |
 | `Union(BloomFilter) error`     | Union with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not     |
 | `Storage() Storage`            | Get filter's Storage                                                                                                                                |
-| `Hash() Hash`                  | Get filter's Hash                                                                                                                                   |
+| `Hasher() Hasher`              | Get filter's Hash                                                                                                                                   |
 
 
 #### Options
@@ -199,7 +199,7 @@ Config WithCapacity()
 
 #### Hashing strategy
 
-This library has builtin 2 hasher with the same strategy:
+This library has builtin 2 hashers with the same strategy:
 
 - From the config we could know: `keySize` minimum key size (in bits) and `keyCount` number of hash function needed.
 - When BloomFilter calls `Hasher.Hash()` it passes `count` - number of keys array needed
@@ -210,7 +210,7 @@ This library has builtin 2 hasher with the same strategy:
 Example 1: `count = 1`, `keySize = 25`, `keyCount = 10`, use `SHA-256`:
 
 - Because `1*25*10 = 250 bits`, we only need to hash 1 time
-- hash = `sha_hash(input)`
+- hash(256 bits) = `sha_hash(input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
@@ -221,7 +221,7 @@ Example 1: `count = 1`, `keySize = 25`, `keyCount = 10`, use `SHA-256`:
 Example 2: `count = 1`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
 
 - Because `1*25*10 > 128`, we hash input 2 times
-- hash = `fnv_128(input)` + `fnv_128(byte(0) + input)`
+- hash(256 bits) = `fnv_128(input)` + `fnv_128(byte(0) + input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
@@ -232,7 +232,7 @@ Example 2: `count = 1`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
 Example 3: `count = 2`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
 
 - Because `2*25*10 = 500 > 128` bits, we need to hash 4 times
-- hash = `fnv_128(input)` + `fnv_128(byte(0) + input)` + `fnv_128(byte(1) + input)`+ `fnv_128(byte(2) + input)`
+- hash(512 bits) = `fnv_128(input)` + `fnv_128(byte(0) + input)` + `fnv_128(byte(1) + input)`+ `fnv_128(byte(2) + input)`
 - pick key 0 = bit 0-24
 - pick key 1 = bit 25-49
 - ...
@@ -242,7 +242,7 @@ Example 3: `count = 2`, `keySize = 25`, `keyCount = 10`, use `FNV-128`:
 - bit 500-512 is discarded
 - return `[2][10]uint32{ {key0, key1...key9}, {key10...key19} }`
 
-This strategy guarantees that the first n keys will always have the same size independent from `count` passed via
+This strategy guarantees that the first n keys will always be the same independent from `count` passed via
 `Hasher.Hash()` function. A classic BloomFilter always use `count=1` but the other variants may use more than 1
 key collection.
 
@@ -280,12 +280,12 @@ func (y *YourHasher) Hash(input []byte, count int) [][]bf.Key {
   // For example: given keyCount = 5, keySize = 16
   //   - count = 1 requires you to returns:
   //     [][]Key{
-  //       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+  //       { "key0: at least 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
   //     }
   //   - count = 2 requires you to returns:
   //     [][]Key{
-  //       { "key0: at lest 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
-  //       { "key5: at lest 16 bits long", "key6:...", "key7:...", "key7:...", "key8:..."},
+  //       { "key0: at least 16 bits long", "key1:...", "key2:...", "key3:...", "key4:..."},
+  //       { "key5: at least 16 bits long", "key6:...", "key7:...", "key7:...", "key8:..."},
   //     }
   return [][]bf.Key{}
 }
