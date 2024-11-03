@@ -30,6 +30,7 @@ func TestShaHasher_Hash(t *testing.T) {
 				{"2cf20000", "4dba0000", "5fb00000", "a30e0000", "26e80000"},
 			},
 		},
+
 		{
 			name:     "count 2 - hash 1 time",
 			keyCount: 5,
@@ -40,6 +41,7 @@ func TestShaHasher_Hash(t *testing.T) {
 				{"3b2a0000", "c5b90000", "e29e0000", "1b160000", "1e5c0000"},
 			},
 		},
+
 		{
 			name:     "count 3 - hash 1 time",
 			keyCount: 5,
@@ -51,6 +53,7 @@ func TestShaHasher_Hash(t *testing.T) {
 				{"1fa70000", "425e0000", "73040000", "33620000", "938b0000"},
 			},
 		},
+
 		{
 			name:     "count 4 - hash 2 times",
 			keyCount: 5,
@@ -63,6 +66,7 @@ func TestShaHasher_Hash(t *testing.T) {
 				{"98240000", "8a2a0000", "5c9b0000", "76880000", "27de0000"},
 			},
 		},
+
 		{
 			name:     "count 1 - hash 2 times",
 			keyCount: 9,
@@ -72,6 +76,7 @@ func TestShaHasher_Hash(t *testing.T) {
 				{"2cf24dba", "5fb0a30e", "26e83b2a", "c5b9e29e", "1b161e5c", "1fa7425e", "73043362", "938b9824", "8a2a5c9b"},
 			},
 		},
+
 		{
 			name:     "count 2 - hash 3 times",
 			keyCount: 9,

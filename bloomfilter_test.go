@@ -305,6 +305,9 @@ func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) 
 	if bs.data[0] != 1 || bs.data[1] != 0 || bs.data[2] != 0b01010101 {
 		t.Errorf("Intersect should not changed the given Storage data")
 	}
+	if a.count != -1 {
+		t.Errorf("expected -1, got %v", a.count)
+	}
 }
 
 func TestUnion_ReturnsErrIfGivenBloomFilterIsNil(t *testing.T) {
@@ -386,6 +389,9 @@ func TestUnion_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
 	}
 	if bs.data[0] != 0 || bs.data[1] != 1 || bs.data[2] != 0 && bs.data[3] != 0b01010101 {
 		t.Errorf("Union should not changed the given Storage data")
+	}
+	if a.count != -1 {
+		t.Errorf("expected -1, got %v", a.count)
 	}
 }
 

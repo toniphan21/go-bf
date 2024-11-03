@@ -30,6 +30,7 @@ func TestFnvHasher_Hash(t *testing.T) {
 				{"f14b0000", "58480000", "64830000", "d94f0000", "70800000"},
 			},
 		},
+
 		{
 			name:     "count 2 - hash 2 times",
 			keyCount: 5,
@@ -40,6 +41,7 @@ func TestFnvHasher_Hash(t *testing.T) {
 				{"38790000", "8c290000", "697f0000", "09a80000", "25de0000"},
 			},
 		},
+
 		{
 			name:     "count 3 - hash 2 times",
 			keyCount: 5,
@@ -51,6 +53,7 @@ func TestFnvHasher_Hash(t *testing.T) {
 				{"bb3c0000", "64bf0000", "6dc60000", "a3060000", "6ccc0000"},
 			},
 		},
+
 		{
 			name:     "count 4 - hash 3 times",
 			keyCount: 5,
@@ -63,6 +66,7 @@ func TestFnvHasher_Hash(t *testing.T) {
 				{"ba810000", "01760000", "dd4d0000", "dc3c0000", "64bf0000"},
 			},
 		},
+
 		{
 			name:     "count 1 - hash 3 times",
 			keyCount: 9,
@@ -72,6 +76,7 @@ func TestFnvHasher_Hash(t *testing.T) {
 				{"f14b5848", "6483d94f", "70803879", "8c29697f", "09a825de", "bb3c64bf", "6dc6a306", "6cccba81", "0176dd4d"},
 			},
 		},
+
 		{
 			name:     "count 2 - hash 3 times",
 			keyCount: 9,

@@ -65,7 +65,7 @@ func main() {
 
 #### BloomFilter interface
 
-The `BloomFilter` interface has 7 main methods:
+The `BloomFilter` interface has 8 main methods:
 
 | Method                         | Description                                                                                                                                         |
 |--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|

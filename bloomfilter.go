@@ -79,6 +79,7 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 
 	if bi, ok := b.storage.(BatchIntersect); ok {
 		bi.Intersect(other.Storage())
+		b.count = -1
 		return nil
 	}
 
@@ -99,6 +100,7 @@ func (b *bloomFilter) Union(other BloomFilter) error {
 
 	if bi, ok := b.storage.(BatchUnion); ok {
 		bi.Union(other.Storage())
+		b.count = -1
 		return nil
 	}
 
