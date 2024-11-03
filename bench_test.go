@@ -61,3 +61,15 @@ func BenchmarkBloomFilter_Union(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkBloomFilter_Clone(b *testing.B) {
+	bf := Must(WithAccuracy(0.01, 1_000_000))
+	for i := 0; i < 1000; i++ {
+		bf.Add([]byte(internal.RandString(10)))
+	}
+	b.Run("bench", func(pb *testing.B) {
+		for i := 0; i < pb.N; i++ {
+			_, _ = bf.Clone()
+		}
+	})
+}

@@ -416,8 +416,21 @@ func main() {
 ### Benchmark
 
 ```
-BenchmarkBloomFilter_WithSHA_Add-12       	 1026219	      1120  ns/op
-BenchmarkBloomFilter_WithFNV_Add-12       	 2048646	      593.9 ns/op
-BenchmarkBloomFilter_WithSHA_Exists-12    	 1000000	      1127  ns/op
-BenchmarkBloomFilter_WithFNV_Exists-12    	 2114071	      569.9 ns/op
+BenchmarkBloomFilter_WithSHA_Add
+BenchmarkBloomFilter_WithSHA_Add-12       	 1027905	      1152 ns/op
+BenchmarkBloomFilter_WithFNV_Add
+BenchmarkBloomFilter_WithFNV_Add-12       	 2113863	       573.3 ns/op
+BenchmarkBloomFilter_WithSHA_Exists
+BenchmarkBloomFilter_WithSHA_Exists-12    	 1000000	      1132 ns/op
+BenchmarkBloomFilter_WithFNV_Exists
+BenchmarkBloomFilter_WithFNV_Exists-12    	 2175315	       549.9 ns/op
+BenchmarkBloomFilter_Intersect
+BenchmarkBloomFilter_Intersect/bench
+BenchmarkBloomFilter_Intersect/bench-12   	   10000	    106422 ns/op
+BenchmarkBloomFilter_Union
+BenchmarkBloomFilter_Union/bench
+BenchmarkBloomFilter_Union/bench-12       	   10000	    106651 ns/op
+BenchmarkBloomFilter_Clone
+BenchmarkBloomFilter_Clone/bench
+BenchmarkBloomFilter_Clone/bench-12       	    6856	    168797 ns/op
 ```
