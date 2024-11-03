@@ -10,7 +10,7 @@ type shaHasher struct {
 
 func (s *shaHasher) Hash(input []byte, count int) [][]Key {
 	kp := s.hasher.makeKeySplitter(count, input, s.doHash)
-	return kp.Split2()
+	return kp.Split()
 }
 
 func (s *shaHasher) Equals(other Hasher) bool {

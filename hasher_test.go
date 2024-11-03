@@ -42,7 +42,7 @@ func (m *mockHashFn) assertCalledCount(t *testing.T, expected int) {
 }
 
 func (m *mockHashFn) assertCalledWith(t *testing.T, expected map[int][]byte) {
-	for i, _ := range m.hashCalledWith {
+	for i := range m.hashCalledWith {
 		if !bytes.Equal(m.hashCalledWith[i], expected[i]) {
 			t.Errorf("expected: %v, got: %v", expected[i], m.hashCalledWith[i])
 		}

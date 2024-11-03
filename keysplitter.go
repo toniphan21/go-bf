@@ -9,31 +9,7 @@ type KeySplitter struct {
 	KeySize  int
 }
 
-func (ks *KeySplitter) Split() []Key {
-	result := make([]Key, ks.KeyCount)
-	l := uint32(len(ks.Source) * 8)
-	for i := 0; i < ks.KeyCount; i++ {
-		var key Key = 0
-
-		for j := 0; j < ks.KeySize; j++ {
-			index := uint32(i*ks.KeySize + j)
-			if index >= l {
-				continue
-			}
-
-			n := index / 8
-			m := index % 8
-			if ks.Source[n]&(1<<m) > 0 {
-				key |= 1 << j
-			}
-		}
-
-		result[i] = key
-	}
-	return result
-}
-
-func (ks *KeySplitter) Split2() [][]Key {
+func (ks *KeySplitter) Split() [][]Key {
 	result := make([][]Key, ks.Count)
 	l := uint32(len(ks.Source) * 8)
 	for i := 0; i < ks.Count; i++ {

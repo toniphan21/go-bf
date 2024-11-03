@@ -10,7 +10,7 @@ type fnvHasher struct {
 
 func (s *fnvHasher) Hash(input []byte, count int) [][]Key {
 	kp := s.hasher.makeKeySplitter(count, input, s.doHash)
-	return kp.Split2()
+	return kp.Split()
 }
 
 func (s *fnvHasher) Equals(other Hasher) bool {
