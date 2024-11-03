@@ -1,11 +1,5 @@
 package bf
 
-import (
-	"errors"
-)
-
-var ErrInvalidStorageCapacity = errors.New("invalid storage capacity")
-
 type Storage interface {
 	Set(index uint32)
 

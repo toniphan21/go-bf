@@ -27,12 +27,51 @@ func (d *dummyConfig) StorageCapacity() uint32 {
 	return d.capacity
 }
 
+func TestNew_ShouldCheckNilConfig(t *testing.T) {
+	f, err := New(nil)
+	assertNewFailedWithError(t, f, err, ErrNilConfig)
+}
+
+func TestNew_ShouldCheckNilOptionFunc(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, nil)
+	assertNewFailedWithError(t, f, err, ErrNilOptionFunc)
+}
+
+func TestNew_ShouldCheckNilStorageFactory(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithStorage(nil))
+	assertNewFailedWithError(t, f, err, ErrNilStorageFactory)
+}
+
+func TestNew_ShouldCheckNilHasherFactory(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithHasher(nil))
+	assertNewFailedWithError(t, f, err, ErrNilHasherFactory)
+}
+
+func TestNew_ShouldCheckNilStorage(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithStorage(&stubStorageFactory{storage: nil}))
+	assertNewFailedWithError(t, f, err, ErrNilStorage)
+}
+
+func TestNew_ShouldCheckNilHasher(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithHasher(&stubHasherFactory{hasher: nil}))
+	assertNewFailedWithError(t, f, err, ErrNilHasher)
+}
+
 func TestNew_CallsStorageFactoryAndReturnErrorIfExists(t *testing.T) {
 	expected := errors.New("whatever")
 	cf := &dummyConfig{k: 10, capacity: 1000}
 	storage := &stubStorageFactory{err: expected}
 
 	f, err := New(cf, WithStorage(storage))
+	assertNewFailedWithError(t, f, err, expected)
+}
+
+func assertNewFailedWithError(t *testing.T, f BloomFilter, err error, expected error) {
 	if f != nil {
 		t.Errorf("expect filter is nil but got %v", f)
 	}
@@ -46,10 +85,10 @@ func TestNew_CallsStorageFactoryAndReturnErrorIfExists(t *testing.T) {
 
 func TestNew_CallsStorageFactoryAndHasherFactory(t *testing.T) {
 	cf := &dummyConfig{k: 10, capacity: 2000}
-	storage := &stubStorageFactory{}
-	hasher := &stubHasherFactory{}
+	storage := &stubStorageFactory{storage: &mockStorage{}}
+	h := &stubHasherFactory{hasher: &mockHasher{}}
 
-	f, err := New(cf, WithStorage(storage), WithHasher(hasher))
+	f, err := New(cf, WithStorage(storage), WithHasher(h))
 	if f == nil {
 		t.Errorf("expect filter is not nil but got nil")
 	}
@@ -60,11 +99,11 @@ func TestNew_CallsStorageFactoryAndHasherFactory(t *testing.T) {
 	if storage.makeCapacity != cf.capacity {
 		t.Errorf("expect %d but got %d", cf.capacity, storage.makeCapacity)
 	}
-	if hasher.makeK != cf.k {
-		t.Errorf("expect %d but got %d", cf.k, hasher.makeK)
+	if h.makeK != cf.k {
+		t.Errorf("expect %d but got %d", cf.k, h.makeK)
 	}
-	if hasher.makeSize != 11 {
-		t.Errorf("expect %d but got %d", 11, hasher.makeSize)
+	if h.makeSize != 11 {
+		t.Errorf("expect %d but got %d", 11, h.makeSize)
 	}
 }
 
@@ -157,7 +196,6 @@ func TestMustDoesNotPanic(t *testing.T) {
 	}()
 
 	cf := &dummyConfig{k: 10, capacity: 1000}
-	storage := &stubStorageFactory{}
 
-	Must(cf, WithStorage(storage))
+	Must(cf)
 }

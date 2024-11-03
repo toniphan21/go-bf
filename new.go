@@ -14,13 +14,28 @@ WithCapacity configuration. Options including WithStorage, WithHasher or a
 built-in hash strategy WithSHA (default) and WithFNV.
 */
 func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
+	if config == nil {
+		return nil, ErrNilConfig
+	}
+
 	o := Option{
 		config:         config,
 		storageFactory: memoryStorageFactory{},
 		hasherFactory:  shaHasherFactory{},
 	}
 	for _, opt := range opts {
+		if opt == nil {
+			return nil, ErrNilOptionFunc
+		}
 		opt(&o)
+	}
+
+	if o.storageFactory == nil {
+		return nil, ErrNilStorageFactory
+	}
+
+	if o.hasherFactory == nil {
+		return nil, ErrNilHasherFactory
 	}
 
 	r, err := newBloomFilter(o)
@@ -35,10 +50,15 @@ func newBloomFilter(o Option) (*bloomFilter, error) {
 	if err != nil {
 		return nil, err
 	}
+	if storage == nil {
+		return nil, ErrNilStorage
+	}
 
-	hash := o.hasherFactory.Make(o.config.NumberOfHashFunctions(), o.config.KeySize())
-
-	return &bloomFilter{option: o, storage: storage, hasher: hash, count: 0}, nil
+	h := o.hasherFactory.Make(o.config.NumberOfHashFunctions(), o.config.KeySize())
+	if h == nil {
+		return nil, ErrNilHasher
+	}
+	return &bloomFilter{option: o, storage: storage, hasher: h, count: 0}, nil
 }
 
 /*

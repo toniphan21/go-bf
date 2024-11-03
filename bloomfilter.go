@@ -1,7 +1,5 @@
 package bf
 
-import "errors"
-
 type BloomFilter interface {
 	Add(item []byte)
 
@@ -19,9 +17,6 @@ type BloomFilter interface {
 
 	Clone() (BloomFilter, error)
 }
-
-var ErrStorageDifference = errors.New("storage is not the same")
-var ErrHasherDifference = errors.New("hasher is not the same")
 
 type bloomFilter struct {
 	option  Option
@@ -62,12 +57,24 @@ func (b *bloomFilter) Hasher() Hasher {
 	return b.hasher
 }
 
-func (b *bloomFilter) Intersect(other BloomFilter) error {
+func (b *bloomFilter) assertOtherBloomFilterIsTheSame(other BloomFilter) error {
+	if other == nil {
+		return ErrNilBloomFilter
+	}
+
 	if !b.storage.Equals(other.Storage()) {
 		return ErrStorageDifference
 	}
+
 	if !b.hasher.Equals(other.Hasher()) {
 		return ErrHasherDifference
+	}
+	return nil
+}
+
+func (b *bloomFilter) Intersect(other BloomFilter) error {
+	if err := b.assertOtherBloomFilterIsTheSame(other); err != nil {
+		return err
 	}
 
 	if bi, ok := b.storage.(BatchIntersect); ok {
@@ -86,11 +93,8 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 }
 
 func (b *bloomFilter) Union(other BloomFilter) error {
-	if !b.storage.Equals(other.Storage()) {
-		return ErrStorageDifference
-	}
-	if !b.hasher.Equals(other.Hasher()) {
-		return ErrHasherDifference
+	if err := b.assertOtherBloomFilterIsTheSame(other); err != nil {
+		return err
 	}
 
 	if bi, ok := b.storage.(BatchUnion); ok {

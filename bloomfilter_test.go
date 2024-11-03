@@ -225,6 +225,19 @@ func TestBloomFilter_Hasher(t *testing.T) {
 	}
 }
 
+func TestIntersect_ReturnsErrIfGivenBloomFilterIsNil(t *testing.T) {
+	a := bloomFilter{storage: &mockStorage{capacity: 1}}
+	err := a.Intersect(nil)
+
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
+	if !errors.Is(err, ErrNilBloomFilter) {
+		t.Errorf("expected ErrNilBloomFilter, got %v", err)
+	}
+}
+
 func TestIntersect_ReturnsErrStorageAreNotEquals(t *testing.T) {
 	a := bloomFilter{storage: &mockStorage{capacity: 1}}
 	b := bloomFilter{storage: &mockStorage{capacity: 2}}
@@ -291,6 +304,19 @@ func TestIntersect_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) 
 	}
 	if bs.data[0] != 1 || bs.data[1] != 0 || bs.data[2] != 0b01010101 {
 		t.Errorf("Intersect should not changed the given Storage data")
+	}
+}
+
+func TestUnion_ReturnsErrIfGivenBloomFilterIsNil(t *testing.T) {
+	a := bloomFilter{storage: &mockStorage{capacity: 1}}
+	err := a.Union(nil)
+
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+
+	if !errors.Is(err, ErrNilBloomFilter) {
+		t.Errorf("expected ErrNilBloomFilter, got %v", err)
 	}
 }
 
