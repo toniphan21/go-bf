@@ -23,10 +23,14 @@ func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
 		opt(&o)
 	}
 
-	return newBloomFilter(o)
+	r, err := newBloomFilter(o)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
-func newBloomFilter(o Option) (BloomFilter, error) {
+func newBloomFilter(o Option) (*bloomFilter, error) {
 	storage, err := o.storageFactory.Make(o.config.StorageCapacity())
 	if err != nil {
 		return nil, err

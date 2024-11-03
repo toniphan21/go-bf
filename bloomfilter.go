@@ -16,6 +16,8 @@ type BloomFilter interface {
 	Intersect(other BloomFilter) error
 
 	Union(other BloomFilter) error
+
+	Clone() (BloomFilter, error)
 }
 
 var ErrStorageDifference = errors.New("storage is not the same")
@@ -104,4 +106,18 @@ func (b *bloomFilter) Union(other BloomFilter) error {
 	}
 	b.count = -1
 	return nil
+}
+
+func (b *bloomFilter) Clone() (BloomFilter, error) {
+	r, err := newBloomFilter(b.option)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.Union(b)
+	if err != nil {
+		return nil, err
+	}
+	r.count = b.count
+	return r, nil
 }

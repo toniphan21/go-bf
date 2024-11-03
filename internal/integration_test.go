@@ -17,9 +17,7 @@ func TestBloomFilter_NoFalseNegative_WithCapacity(t *testing.T) {
 	n, m := 1_000_000, 5_000_000
 	cf := bf.WithCapacity(uint32(m), 10)
 	filter, _ := bf.New(cf)
-	for i := 0; i < n; i++ {
-		runNoFalseNegativeTest(t, filter)
-	}
+	runNoFalseNegativeTest(t, filter, n)
 }
 
 func TestBloomFilter_NoFalseNegative_WithAccuracy(t *testing.T) {
@@ -27,8 +25,57 @@ func TestBloomFilter_NoFalseNegative_WithAccuracy(t *testing.T) {
 	var n = 1_000_000
 	cf := bf.WithAccuracy(0.001, uint32(n))
 	filter, _ := bf.New(cf)
+	runNoFalseNegativeTest(t, filter, n)
+}
+
+func runNoFalseNegativeTest(t *testing.T, filter bf.BloomFilter, n int) {
 	for i := 0; i < n; i++ {
-		runNoFalseNegativeTest(t, filter)
+		item := []byte(RandString(10))
+		filter.Add(item)
+		after := filter.Exists(item)
+		if !after {
+			t.Fatalf("Bloom Filter has false negative")
+		}
+	}
+}
+
+func TestBloomFilter_Clone_NoFalseNegative_WithCapacity(t *testing.T) {
+	t.Parallel()
+	n, m := 1_000_000, 5_000_000
+	cf := bf.WithCapacity(uint32(m), 10)
+	filter, _ := bf.New(cf)
+	runCloneNoFalseNegativeTest(t, filter, n)
+}
+
+func TestBloomFilter_Clone_NoFalseNegative_WithAccuracy(t *testing.T) {
+	t.Parallel()
+	var n = 1_000_000
+	cf := bf.WithAccuracy(0.001, uint32(n))
+	filter, _ := bf.New(cf)
+	runCloneNoFalseNegativeTest(t, filter, n)
+}
+
+func runCloneNoFalseNegativeTest(t *testing.T, filter bf.BloomFilter, n int) {
+	keys := make([][]byte, n)
+	for i := 0; i < n; i++ {
+		item := []byte(RandString(10))
+		keys[i] = item
+		filter.Add(item)
+		after := filter.Exists(item)
+		if !after {
+			t.Fatalf("Bloom Filter has false negative")
+		}
+	}
+
+	cloned, _ := filter.Clone()
+	for i := 0; i < n; i++ {
+		check := cloned.Exists(keys[i])
+		if !check {
+			t.Fatalf("Bloom Filter has false negative")
+		}
+	}
+	if cloned.Count() != filter.Count() {
+		t.Fatalf("cloned Bloom Filter has different count")
 	}
 }
 
@@ -135,15 +182,6 @@ func runNoFalseNegativeAfterUnionTest(t *testing.T, n int, target, other bf.Bloo
 		if !target.Exists([]byte(key)) {
 			t.Fatalf("Bloom Filter has false negative when using key from other after Union() with key=%v", key)
 		}
-	}
-}
-
-func runNoFalseNegativeTest(t *testing.T, filter bf.BloomFilter) {
-	item := []byte(RandString(10))
-	filter.Add(item)
-	after := filter.Exists(item)
-	if !after {
-		t.Fatalf("Bloom Filter has false negative")
 	}
 }
 

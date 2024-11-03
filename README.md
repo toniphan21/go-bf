@@ -72,6 +72,7 @@ The `BloomFilter` interface has 7 main methods:
 | `Add([]byte)`                  | Add an item into the filter                                                                                                                         |
 | `Exists([]byte) bool`          | Check existence of an item in the filter                                                                                                            |
 | `Count() int`                  | Get number of items added into the filter. Return -1 if not sure (for example after using `Intersect()` or `Union()`                                |
+| `Clone() (BloomFilter, error)` | Create new BloomFilter instance with the same storage, hasher and data                                                                              |
 | `Intersect(BloomFilter) error` | Intersect with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not |
 | `Union(BloomFilter) error`     | Union with given filter. They must use the same Storage and Hash. Only Storage's data of current filter is affected, given filter's data is not     |
 | `Storage() Storage`            | Get filter's Storage                                                                                                                                |

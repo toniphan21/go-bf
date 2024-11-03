@@ -100,7 +100,7 @@ func isKeysEquals(a, b [][]Key) bool {
 	return true
 }
 
-func isArrayEquals[T byte | Key](a, b []T) bool {
+func isArrayEquals[T byte | Key | uint](a, b []T) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -360,5 +360,110 @@ func TestUnion_ShouldUseIntersectIfTheStorageIsBatchIntersect(t *testing.T) {
 	}
 	if bs.data[0] != 0 || bs.data[1] != 1 || bs.data[2] != 0 && bs.data[3] != 0b01010101 {
 		t.Errorf("Union should not changed the given Storage data")
+	}
+}
+
+func TestClone_ReturnErrIfStorageFactoryReturnError(t *testing.T) {
+	expected := errors.New("whatever")
+	h := &mockHasher{hash: [][]Key{{1, 2}}}
+	storage := &bitset{data: []uint{0, 0, 2, 0b00110011}}
+
+	a := bloomFilter{
+		option: Option{
+			config:         &dummyConfig{},
+			storageFactory: &stubStorageFactory{err: expected},
+			hasherFactory:  &stubHasherFactory{hasher: h},
+		},
+		count:   123,
+		storage: storage,
+		hasher:  h,
+	}
+	r, err := a.Clone()
+
+	if r != nil {
+		t.Errorf("expected nil, got %v", r)
+	}
+
+	if err == nil || !errors.Is(err, expected) {
+		t.Errorf("expected %v, got %v", expected, err)
+	}
+}
+
+func TestClone_UseUnionToCopyData_IfUnionReturnErrItShouldForwardTheError(t *testing.T) {
+	h := &mockHasher{hash: [][]Key{{1, 2}}}
+	storage := &bitset{data: []uint{0, 0, 2, 0b00110011}}
+
+	a := bloomFilter{
+		option: Option{
+			config:         &dummyConfig{},
+			storageFactory: &stubStorageFactory{storage: storage},
+			hasherFactory:  &stubHasherFactory{hasher: h},
+		},
+		count:   123,
+		storage: storage,
+		hasher:  &mockHasher{hash: [][]Key{{2, 1}}},
+	}
+	r, err := a.Clone()
+
+	if r != nil {
+		t.Errorf("expected nil, got %v", r)
+	}
+	if err == nil || !errors.Is(err, ErrHasherDifference) {
+		t.Errorf("expected %v, got %v", ErrHasherDifference, err)
+	}
+}
+
+func TestClone_ShouldReturnNewInstanceWithTheSameData(t *testing.T) {
+	h := &mockHasher{hash: [][]Key{{1, 2}}}
+	storage := &bitset{data: []uint{0, 0, 2, 0b00110011}}
+
+	a := bloomFilter{
+		option: Option{
+			config:         &dummyConfig{},
+			storageFactory: &stubStorageFactory{storage: storage},
+			hasherFactory:  &stubHasherFactory{hasher: h},
+		},
+		count:   123,
+		storage: storage,
+		hasher:  h,
+	}
+	r, err := a.Clone()
+
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+
+	result, ok := r.(*bloomFilter)
+	if !ok {
+		t.Errorf("expected bloomFilter, got %v", r)
+	}
+
+	if &a == result {
+		t.Errorf("expected different bloomFilter instance, got same")
+	}
+
+	if &a.option == &result.option {
+		t.Errorf("expected different option instance, got same")
+	}
+
+	if &a.storage == &result.storage {
+		t.Errorf("expected different storage instance, got same")
+	}
+
+	if &a.hasher == &result.hasher {
+		t.Errorf("expected different storage instance, got same")
+	}
+
+	s, ok := result.storage.(*bitset)
+	if !ok {
+		t.Errorf("expected bitset, got %v", result.storage)
+	}
+
+	if !isArrayEquals(storage.data, s.data) {
+		t.Errorf("expected %v, got %v", storage.data, s.data)
+	}
+
+	if r.Count() != 123 {
+		t.Errorf("expected 123, got %v", r.Count())
 	}
 }
