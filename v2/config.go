@@ -12,12 +12,6 @@ type ConfigBlock struct {
 	KeySizeInBits         byte
 }
 
-type Expansion interface {
-	ExpansionRatio() float64
-
-	ExpansionRate() float64
-}
-
 type Config interface {
 	Info() string
 
@@ -30,6 +24,8 @@ type Config interface {
 	Next(expansionRate float64) Config
 }
 
+const DefaultFilledRatio = 0.5
+const DefaultExpansionRate = 2
 const DefaultErrorRate = 0.0001
 const DefaultNumberOfItem = 1000000
 const DefaultSizeInBits = 8192

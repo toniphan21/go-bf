@@ -6,6 +6,16 @@ import (
 	"testing"
 )
 
+type dummyHasher struct{}
+
+func (d *dummyHasher) Hash(input []byte, configs []ConfigBlock) [][]Key {
+	return nil
+}
+
+func (d *dummyHasher) IsCompatible(other Hasher) bool {
+	return true
+}
+
 type mockHashFn struct {
 	hashCalledCount int
 	hashCalledWith  map[int][]byte

@@ -18,10 +18,15 @@ type BloomFilter interface {
 	Clone() (BloomFilter, error)
 }
 
+type expansion struct {
+	ratio float64
+	rate  float64
+}
+
 type bloomFilter struct {
 	config           Config
 	currentConfig    Config
-	expansion        Expansion
+	expansion        expansion
 	hasher           Hasher
 	storage          Storage
 	configBlocks     []ConfigBlock
@@ -38,7 +43,7 @@ func toConfigBlock(config Config) ConfigBlock {
 	}
 }
 
-func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion Expansion) (*bloomFilter, error) {
+func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion expansion) (*bloomFilter, error) {
 	if config == nil {
 		return nil, ErrNilConfig
 	}
@@ -47,9 +52,6 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion Exp
 	}
 	if storage == nil {
 		return nil, ErrNilStorage
-	}
-	if expansion == nil {
-		return nil, ErrNilExpansion
 	}
 
 	b := &bloomFilter{
@@ -60,7 +62,7 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion Exp
 		hasher:           hasher,
 		count:            0,
 		countByBlocks:    []int{0},
-		maxCountByBlocks: []int{int(float64(config.StorageCapacity()) * expansion.ExpansionRatio())},
+		maxCountByBlocks: []int{int(float64(config.StorageCapacity()) * expansion.ratio)},
 		configBlocks:     []ConfigBlock{toConfigBlock(config)},
 	}
 	return b, nil
@@ -87,12 +89,12 @@ func (b *bloomFilter) Add(item []byte) {
 	b.count++
 	b.countByBlocks[lastBlock]++
 
-	if b.expansion.ExpansionRate() != 0 && b.countByBlocks[lastBlock] > b.maxCountByBlocks[lastBlock] {
-		next := b.currentConfig.Next(b.expansion.ExpansionRate())
+	if b.expansion.rate > 0 && b.countByBlocks[lastBlock] > b.maxCountByBlocks[lastBlock] {
+		next := b.currentConfig.Next(b.expansion.rate)
 		b.currentConfig = next
 
 		b.countByBlocks = append(b.countByBlocks, 0)
-		b.maxCountByBlocks = append(b.maxCountByBlocks, int(float64(next.StorageCapacity())*b.expansion.ExpansionRatio()))
+		b.maxCountByBlocks = append(b.maxCountByBlocks, int(float64(next.StorageCapacity())*b.expansion.ratio))
 		b.storage.NewBlock(next.StorageCapacity())
 		b.configBlocks = append(b.configBlocks, toConfigBlock(next))
 	}
