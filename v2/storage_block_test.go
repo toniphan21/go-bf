@@ -33,7 +33,7 @@ func (m *mockStorageBlock) Capacity() uint32 {
 	return m.capacity
 }
 
-func (m *mockStorageBlock) Equals(other StorageBlock) bool {
+func (m *mockStorageBlock) IsCompatible(other StorageBlock) bool {
 	o, ok := other.(*mockStorageBlock)
 	if !ok {
 		return false
@@ -75,19 +75,19 @@ func TestMemoryStorageBlock(t *testing.T) {
 			name: "one word", size: 1, capacity: 5, start: 0, end: 8,
 		},
 		{
-			name: "one word full", size: 1, capacity: uintSize, start: 0, end: uintSize,
+			name: "one word full", size: 1, capacity: wordSize, start: 0, end: wordSize,
 		},
 		{
-			name: "two words", size: 2, capacity: uintSize + 2, start: 0, end: uintSize*2 + 4,
+			name: "two words", size: 2, capacity: wordSize + 2, start: 0, end: wordSize*2 + 4,
 		},
 		{
-			name: "two words full", size: 2, capacity: uintSize * 2, start: 0, end: uintSize * 2,
+			name: "two words full", size: 2, capacity: wordSize * 2, start: 0, end: wordSize * 2,
 		},
 		{
-			name: "100 words", size: 100, capacity: uintSize * 90, start: 0, end: uintSize * 101,
+			name: "100 words", size: 100, capacity: wordSize * 90, start: 0, end: wordSize * 101,
 		},
 		{
-			name: "100 words full", size: 100, capacity: uintSize * 100, start: 0, end: uintSize * 110,
+			name: "100 words full", size: 100, capacity: wordSize * 100, start: 0, end: wordSize * 110,
 		},
 	}
 
@@ -114,7 +114,7 @@ func TestMemoryStorageBlock(t *testing.T) {
 				assertBoolForIndex(t, i, before, false)
 				if i < tc.capacity {
 					assertBoolForIndex(t, i, after, true)
-					chars := make([]string, tc.size*uintSize)
+					chars := make([]string, tc.size*wordSize)
 					for ci := range chars {
 						chars[ci] = "0"
 					}
@@ -149,7 +149,7 @@ func TestMemoryStorageBlock_Equals_ReturnsFalseIfItIsNotMemoryStorageBlock(t *te
 	b := &memoryStorageBlock{capacity: 1}
 	o := &mockStorageBlock{capacity: 1}
 
-	if b.Equals(o) {
+	if b.IsCompatible(o) {
 		t.Errorf("Expected false, got true")
 	}
 }
@@ -158,7 +158,7 @@ func TestMemoryStorageBlock_Equals_ReturnsFalseIfCapacityIsNotEqual(t *testing.T
 	b := &memoryStorageBlock{capacity: 1}
 	o := &memoryStorageBlock{capacity: 2}
 
-	if b.Equals(o) {
+	if b.IsCompatible(o) {
 		t.Errorf("Expected false, got true")
 	}
 }
@@ -167,7 +167,7 @@ func TestMemoryStorageBlock_Equals_ReturnsTrueIfItIsAMemoryStorageBlockAndHaveSa
 	b := &memoryStorageBlock{capacity: 1}
 	o := &memoryStorageBlock{capacity: 1}
 
-	if !b.Equals(o) {
+	if !b.IsCompatible(o) {
 		t.Errorf("Expected true, got false")
 	}
 }
@@ -227,7 +227,7 @@ func reverseByteBinaryString(b string) string {
 
 func sprintfUintInBinary(b *[]uint) string {
 	result := make([]string, len(*b))
-	format := fmt.Sprintf("%%0%db", uintSize)
+	format := fmt.Sprintf("%%0%db", wordSize)
 	for i, bt := range *b {
 		result[i] = reverseByteBinaryString(fmt.Sprintf(format, bt))
 	}

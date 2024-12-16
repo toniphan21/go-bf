@@ -2,6 +2,26 @@ package bf
 
 import "math"
 
+type StorageBlock interface {
+	Set(index uint32)
+
+	Clear(index uint32)
+
+	Get(index uint32) bool
+
+	Capacity() uint32
+
+	IsCompatible(other StorageBlock) bool
+}
+
+type BatchIntersect interface {
+	Intersect(other StorageBlock)
+}
+
+type BatchUnion interface {
+	Union(other StorageBlock)
+}
+
 type memoryStorageBlock struct {
 	data     []uint
 	capacity uint32
@@ -45,7 +65,7 @@ func (b *memoryStorageBlock) Get(index uint32) bool {
 	return d > 0
 }
 
-func (b *memoryStorageBlock) Equals(other StorageBlock) bool {
+func (b *memoryStorageBlock) IsCompatible(other StorageBlock) bool {
 	o, ok := other.(*memoryStorageBlock)
 	if !ok {
 		return false
@@ -54,8 +74,8 @@ func (b *memoryStorageBlock) Equals(other StorageBlock) bool {
 }
 
 func (b *memoryStorageBlock) indexing(i uint32) (uint32, uint) {
-	n := i / uintSize
-	m := i % uintSize
+	n := i / wordSize
+	m := i % wordSize
 
 	return n, 1 << m
 }
@@ -83,3 +103,7 @@ func (b *memoryStorageBlock) Union(other StorageBlock) {
 		b.data[i] |= o.data[i]
 	}
 }
+
+var _ StorageBlock = (*memoryStorageBlock)(nil)
+var _ BatchIntersect = (*memoryStorageBlock)(nil)
+var _ BatchUnion = (*memoryStorageBlock)(nil)
