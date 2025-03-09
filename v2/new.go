@@ -18,10 +18,6 @@ Default expand when filled ratio reaches 0.5 with expansion rate is 2. The value
 using WithExpansion, WithFilledRatio, WithExpansionRate or WithoutExpansion, WithNoExpansion.
 */
 func New(config Config, opts ...OptionFunc) (BloomFilter, error) {
-	if config == nil {
-		return nil, ErrNilConfig
-	}
-
 	o := Option{
 		config:    config,
 		storage:   &memoryStorage{},

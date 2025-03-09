@@ -1,15 +1,19 @@
 package bf
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 type dummyConfig struct {
 	info     string
 	k        byte
+	s        byte
 	capacity uint32
 }
 
 func (d *dummyConfig) KeySize() byte {
-	return calcKeyMinSizeFromCapacity(d.capacity)
+	return d.s
 }
 
 func (d *dummyConfig) Info() string {
@@ -32,9 +36,68 @@ func (d *dummyConfig) Next(expansionRate float64) Config {
 	}
 }
 
+func assertNewFailedWithError(t *testing.T, f BloomFilter, err error, expected error) {
+	if f != nil {
+		t.Errorf("expect filter is nil but got %v", f)
+	}
+	if err == nil {
+		t.Errorf("expect error but got nil")
+	}
+	if !errors.Is(err, expected) {
+		t.Errorf("expect %v but got %v", expected, err)
+	}
+}
+
+func TestNew_ShouldCheckNilConfig(t *testing.T) {
+	f, err := New(nil)
+	assertNewFailedWithError(t, f, err, ErrNilConfig)
+}
+
+func TestNew_ShouldCheckNilOptionFunc(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, nil)
+	assertNewFailedWithError(t, f, err, ErrNilOptionFunc)
+}
+
+func TestNew_ShouldCheckNilStorage(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithStorage(nil))
+	assertNewFailedWithError(t, f, err, ErrNilStorage)
+}
+
+func TestNew_ShouldCheckNilHasher(t *testing.T) {
+	cf := &dummyConfig{k: 10, capacity: 1000}
+	f, err := New(cf, WithHasher(nil))
+	assertNewFailedWithError(t, f, err, ErrNilHasher)
+}
+
+func TestMustPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Expected Must() to panic, but it did not")
+		}
+	}()
+
+	cf := &dummyConfig{k: 10, capacity: 1000}
+
+	Must(cf, WithStorage(nil))
+}
+
+func TestMustDoesNotPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Did not expect Must() to panic, but it did")
+		}
+	}()
+
+	cf := &dummyConfig{k: 10, capacity: 1000}
+
+	Must(cf)
+}
+
 func TestWithStorage(t *testing.T) {
 	opt := &Option{}
-	ds := &dummyStorage{}
+	ds := &mockStorage{}
 	fn := WithStorage(ds)
 
 	fn(opt)

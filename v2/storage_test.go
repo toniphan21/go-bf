@@ -4,20 +4,35 @@ import (
 	"testing"
 )
 
-type dummyStorage struct{}
-
-func (d *dummyStorage) NewBlock(capacity uint32) {
+type mockStorage struct {
+	blocks        []StorageBlock
+	newBlock      map[int]StorageBlock
+	newBlockCalls map[int]uint32
 }
 
-func (d *dummyStorage) BlockCount() int {
-	return 0
+func (m *mockStorage) NewBlock(capacity uint32) {
+	if m.newBlock == nil {
+		return
+	}
+
+	idx := len(m.newBlockCalls)
+	m.blocks = append(m.blocks, m.newBlock[idx])
+
+	if m.newBlockCalls == nil {
+		m.newBlockCalls = make(map[int]uint32)
+	}
+	m.newBlockCalls[idx] = capacity
 }
 
-func (d *dummyStorage) Block(index int) StorageBlock {
-	return nil
+func (m *mockStorage) BlockCount() int {
+	return len(m.blocks)
 }
 
-func (d *dummyStorage) IsCompatible(other Storage) bool {
+func (m *mockStorage) Block(index int) StorageBlock {
+	return m.blocks[index]
+}
+
+func (m *mockStorage) IsCompatible(other Storage) bool {
 	return false
 }
 
@@ -137,7 +152,7 @@ func TestMemoryStorage_IsCompatible(t *testing.T) {
 		{
 			name:     "if given storage is not memoryStorage, not compatible",
 			instance: &memoryStorage{},
-			given:    &dummyStorage{},
+			given:    &mockStorage{},
 			expected: false,
 		},
 

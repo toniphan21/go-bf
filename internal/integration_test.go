@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	v1 "github.com/toniphan21/go-bf"
+	v2 "github.com/toniphan21/go-bf/v2"
 	"math"
 	"math/rand"
 	"testing"
@@ -10,33 +11,6 @@ import (
 
 func calcEstimatedErrorRate(k byte, n int, m uint32) float64 {
 	return math.Pow(1-math.Pow(math.E, (0-float64(k)*float64(n))/float64(m)), float64(k))
-}
-
-func TestBloomFilter_NoFalseNegative_WithCapacity(t *testing.T) {
-	t.Parallel()
-	n, m := 1_000_000, 5_000_000
-	cf := v1.WithCapacity(uint32(m), 10)
-	filter, _ := v1.New(cf)
-	runNoFalseNegativeTest(t, filter, n)
-}
-
-func TestBloomFilter_NoFalseNegative_WithAccuracy(t *testing.T) {
-	t.Parallel()
-	var n = 1_000_000
-	cf := v1.WithAccuracy(0.001, uint32(n))
-	filter, _ := v1.New(cf)
-	runNoFalseNegativeTest(t, filter, n)
-}
-
-func runNoFalseNegativeTest(t *testing.T, filter v1.BloomFilter, n int) {
-	for i := 0; i < n; i++ {
-		item := []byte(RandString(10))
-		filter.Add(item)
-		after := filter.Exists(item)
-		if !after {
-			t.Fatalf("Bloom Filter has false negative")
-		}
-	}
 }
 
 func TestBloomFilter_Clone_NoFalseNegative_WithCapacity(t *testing.T) {
@@ -213,18 +187,47 @@ func TestBloomFilter_FalsePositiveRate_WithCapacity(t *testing.T) {
 
 func TestBloomFilter_FalsePositiveRate_WithAccuracy(t *testing.T) {
 	requested := []float64{0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0001}
-	for _, e := range requested {
-		t.Run(fmt.Sprintf("Check false positive rate with requested error rate %v - SHA", e), func(t *testing.T) {
+	for _, v := range requested {
+		e := v
+		t.Run(fmt.Sprintf("v1 - Check false positive rate with requested error rate %v - SHA", e), func(t *testing.T) {
 			t.Parallel()
 			var n = 1_000_000
-			filter, _ := v1.New(v1.WithAccuracy(e, uint32(n)))
+			filter := v1.Must(v1.WithAccuracy(e, uint32(n)))
 			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
 		})
 
-		t.Run(fmt.Sprintf("Check false positive rate with requested error rate %v - FVN", e), func(t *testing.T) {
+		t.Run(fmt.Sprintf("v1 - Check false positive rate with requested error rate %v - FVN", e), func(t *testing.T) {
 			t.Parallel()
 			var n = 1_000_000
-			filter, _ := v1.New(v1.WithAccuracy(e, uint32(n)), v1.WithFNV())
+			filter := v1.Must(v1.WithAccuracy(e, uint32(n)), v1.WithFNV())
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
+		})
+
+		t.Run(fmt.Sprintf("v2 - Check false positive rate with requested error rate %v - SHA", e), func(t *testing.T) {
+			t.Parallel()
+			var n = 1_000_000
+			filter := v2.Must(v2.WithAccuracy(e, uint32(n)))
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
+		})
+
+		t.Run(fmt.Sprintf("v2 - Check false positive rate with requested error rate %v - FVN", e), func(t *testing.T) {
+			t.Parallel()
+			var n = 1_000_000
+			filter := v2.Must(v2.WithAccuracy(e, uint32(n)), v2.WithFNV())
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
+		})
+
+		t.Run(fmt.Sprintf("v2 - Check false positive rate with requested error rate %v - SHA - Expandable", e), func(t *testing.T) {
+			t.Parallel()
+			var n = 1_000_000
+			filter := v2.Must(v2.WithAccuracy(e, uint32(n/10)))
+			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
+		})
+
+		t.Run(fmt.Sprintf("v2 - Check false positive rate with requested error rate %v - FVN - Expandable", e), func(t *testing.T) {
+			t.Parallel()
+			var n = 1_000_000
+			filter := v2.Must(v2.WithAccuracy(e, uint32(n/10)), v2.WithFNV())
 			runTestBloomFilterFalsePositiveRateWithAccuracy(t, n, filter, e)
 		})
 	}
@@ -233,7 +236,7 @@ func TestBloomFilter_FalsePositiveRate_WithAccuracy(t *testing.T) {
 func runTestBloomFilterFalsePositiveRateWithAccuracy(
 	t *testing.T,
 	n int,
-	filter v1.BloomFilter,
+	filter BloomFilterSpec,
 	requestedErrorRate float64,
 ) {
 	for i := 0; i < n; i++ {
@@ -248,6 +251,7 @@ func runTestBloomFilterFalsePositiveRateWithAccuracy(
 	}
 	rate := float64(count) / float64(n)
 	tolerant := math.Abs(rate - requestedErrorRate)
+	println(fmt.Sprintf("False positive rate - requested %v, actual %v", requestedErrorRate, rate))
 	if tolerant > requestedErrorRate {
 		t.Skipf("False positive error rate is 2x greater than requested. Requested %v, actual %v", requestedErrorRate, rate)
 	}

@@ -31,8 +31,8 @@ type bloomFilter struct {
 	storage          Storage
 	configBlocks     []ConfigBlock
 	count            int
-	countByBlocks    []int
-	maxCountByBlocks []int
+	bitSetByBlocks   []int
+	maxBitSetByBlock []int
 }
 
 func toConfigBlock(config Config) ConfigBlock {
@@ -54,6 +54,7 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion exp
 		return nil, ErrNilStorage
 	}
 
+	storage.NewBlock(config.StorageCapacity())
 	b := &bloomFilter{
 		config:           config,
 		currentConfig:    config,
@@ -61,8 +62,8 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion exp
 		storage:          storage,
 		hasher:           hasher,
 		count:            0,
-		countByBlocks:    []int{0},
-		maxCountByBlocks: []int{int(float64(config.StorageCapacity()) * expansion.ratio)},
+		bitSetByBlocks:   []int{0},
+		maxBitSetByBlock: []int{int(float64(config.StorageCapacity()) * expansion.ratio)},
 		configBlocks:     []ConfigBlock{toConfigBlock(config)},
 	}
 	return b, nil
@@ -71,30 +72,33 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion exp
 func (b *bloomFilter) Add(item []byte) {
 	lastBlock := len(b.configBlocks) - 1
 	keySets := b.hasher.Hash(item, b.configBlocks)
-	storageBlock := b.storage.Block(lastBlock)
+	for i := 0; i < lastBlock; i++ {
+		if b.existsInBlock(i, keySets[i]) {
+			return
+		}
+	}
 
+	storageBlock := b.storage.Block(lastBlock)
 	exists := true
 	for _, key := range keySets[lastBlock] {
 		index := uint32(key) % storageBlock.Capacity()
 		if !storageBlock.Get(index) {
 			exists = false
+			storageBlock.Set(index)
+			b.bitSetByBlocks[lastBlock]++
 		}
-		storageBlock.Set(index)
 	}
 
-	if exists {
-		return
+	if !exists {
+		b.count++
 	}
 
-	b.count++
-	b.countByBlocks[lastBlock]++
-
-	if b.expansion.rate > 0 && b.countByBlocks[lastBlock] > b.maxCountByBlocks[lastBlock] {
+	if b.expansion.rate > 0 && b.bitSetByBlocks[lastBlock] > b.maxBitSetByBlock[lastBlock] {
 		next := b.currentConfig.Next(b.expansion.rate)
 		b.currentConfig = next
 
-		b.countByBlocks = append(b.countByBlocks, 0)
-		b.maxCountByBlocks = append(b.maxCountByBlocks, int(float64(next.StorageCapacity())*b.expansion.ratio))
+		b.bitSetByBlocks = append(b.bitSetByBlocks, 0)
+		b.maxBitSetByBlock = append(b.maxBitSetByBlock, int(float64(next.StorageCapacity())*b.expansion.ratio))
 		b.storage.NewBlock(next.StorageCapacity())
 		b.configBlocks = append(b.configBlocks, toConfigBlock(next))
 	}
@@ -103,22 +107,22 @@ func (b *bloomFilter) Add(item []byte) {
 func (b *bloomFilter) Exists(item []byte) bool {
 	keySets := b.hasher.Hash(item, b.configBlocks)
 	for i, ks := range keySets {
-		storageBlock := b.storage.Block(i)
-		exists := true
-
-		for _, key := range ks {
-			index := uint32(key) % storageBlock.Capacity()
-			if !storageBlock.Get(index) {
-				exists = false
-				break
-			}
-		}
-
-		if exists {
+		if b.existsInBlock(i, ks) {
 			return true
 		}
 	}
 	return false
+}
+
+func (b *bloomFilter) existsInBlock(block int, keys []Key) bool {
+	storageBlock := b.storage.Block(block)
+	for _, key := range keys {
+		index := uint32(key) % storageBlock.Capacity()
+		if !storageBlock.Get(index) {
+			return false
+		}
+	}
+	return true
 }
 
 func (b *bloomFilter) Count() int {
@@ -149,28 +153,3 @@ func (b *bloomFilter) Clone() (BloomFilter, error) {
 }
 
 var _ BloomFilter = (*bloomFilter)(nil)
-
-//func getConfigBlock(config Config, expansionCf ExpansionConfig, numberOfBlocks int) []ConfigBlock {
-//	expansionRate := expansionCf.ExpansionRate()
-//	if expansionCf == nil || expansionRate == 0 || numberOfBlocks < 1 {
-//		return []ConfigBlock{
-//			{
-//				Capacity:              config.StorageCapacity(),
-//				NumberOfHashFunctions: config.NumberOfHashFunctions(),
-//				KeySizeInBits:         config.KeySize(),
-//			},
-//		}
-//	}
-//
-//	result := make([]ConfigBlock, numberOfBlocks)
-//	current := config
-//	for i := 0; i < numberOfBlocks; i++ {
-//		result[i] = ConfigBlock{
-//			Capacity:              current.StorageCapacity(),
-//			NumberOfHashFunctions: current.NumberOfHashFunctions(),
-//			KeySizeInBits:         current.KeySize(),
-//		}
-//		current = current.Next(expansionRate)
-//	}
-//	return result
-//}

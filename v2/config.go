@@ -40,13 +40,14 @@ func calcEstimatedErrorRate(k byte, n int, m uint32) float64 {
 }
 
 type config struct {
-	mode            string
-	k               byte
-	n               uint32
-	m               float64
-	e               float64
-	requestedE      float64
-	storageCapacity uint32
+	mode               string
+	k                  byte
+	n                  uint32
+	m                  float64
+	e                  float64
+	requestedE         float64
+	accountedErrorRate float64
+	storageCapacity    uint32
 }
 
 func (c config) NumberOfHashFunctions() byte {
@@ -124,7 +125,7 @@ func (c config) Next(expansionRate float64) Config {
 		if next > math.MaxUint32 {
 			next = math.MaxUint32
 		}
-		return WithAccuracy(c.requestedE, uint32(math.Round(next)))
+		return WithAccuracy(c.accountedErrorRate/2, uint32(math.Round(next)))
 	default:
 		next := float64(c.storageCapacity) * expansionRate
 		if next > math.MaxUint32 {
@@ -141,22 +142,24 @@ func WithAccuracy(errorRate float64, numberOfItems uint32) Config {
 	if errorRate <= 0 {
 		errorRate = DefaultErrorRate
 	}
+	accountedErrorRate := errorRate / 2
 
 	noi := float64(numberOfItems)
-	log2 := math.Abs(math.Log2(errorRate))
+	log2 := math.Abs(math.Log2(accountedErrorRate))
 	k := log2
 	bitPerItem := 1.44 * log2
 	capacity := uint32(math.Ceil(noi * bitPerItem))
 
 	nK := byte(math.Ceil(k))
 	return config{
-		mode:            "accuracy",
-		k:               nK,
-		m:               bitPerItem,
-		n:               numberOfItems,
-		e:               calcEstimatedErrorRate(nK, int(numberOfItems), capacity),
-		requestedE:      errorRate,
-		storageCapacity: capacity,
+		mode:               "accuracy",
+		k:                  nK,
+		m:                  bitPerItem,
+		n:                  numberOfItems,
+		e:                  calcEstimatedErrorRate(nK, int(numberOfItems), capacity),
+		requestedE:         errorRate,
+		accountedErrorRate: accountedErrorRate,
+		storageCapacity:    capacity,
 	}
 }
 
