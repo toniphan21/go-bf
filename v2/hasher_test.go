@@ -6,6 +6,63 @@ import (
 	"testing"
 )
 
+type mockHasher struct {
+	hashInput []byte
+	hash      [][]Key
+}
+
+func (m *mockHasher) Hash(input []byte, configs []ConfigBlock) [][]Key {
+	m.hashInput = input
+
+	return m.hash
+}
+
+func (m *mockHasher) IsCompatible(other Hasher) bool {
+	o, ok := other.(*mockHasher)
+	if !ok {
+		return false
+	}
+	return isArrayEquals(o.hashInput, m.hashInput) && isKeysEquals(o.hash, m.hash)
+}
+
+func isKeysEquals(a, b [][]Key) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := 0; i < len(a); i++ {
+		if !isArrayEquals(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isArrayEquals[T byte | Key | uint](a, b []T) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 type dummyHasher struct{}
 
 func (d *dummyHasher) Hash(input []byte, configs []ConfigBlock) [][]Key {
