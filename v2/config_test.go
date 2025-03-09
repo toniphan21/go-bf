@@ -62,24 +62,24 @@ func TestWithAccuracy(t *testing.T) {
 			name:             "invalid capacity",
 			e:                0,
 			n:                5,
-			expectedK:        14,
-			expectedCapacity: 96,
+			expectedK:        15,
+			expectedCapacity: 103,
 			expectedE:        DefaultErrorRate,
 			expectedN:        5,
 		},
 
 		{
 			name: "invalid number of item", e: 0.001, n: 0,
-			expectedK:        10,
-			expectedCapacity: 14350730,
+			expectedK:        11,
+			expectedCapacity: 15790730,
 			expectedE:        0.001,
 			expectedN:        DefaultNumberOfItem,
 		},
 
 		{
 			name: "custom values", e: 0.01, n: 10000,
-			expectedK:        7,
-			expectedCapacity: 95672,
+			expectedK:        8,
+			expectedCapacity: 110072,
 			expectedE:        0.01,
 			expectedN:        10000,
 		},
@@ -154,10 +154,10 @@ func TestConfig_Next(t *testing.T) {
 		},
 
 		{
-			name:          "expansion rate = 1, the next config would be the same - with accuracy",
+			name:          "expansion rate = 1, the next config would have expected ratio = 1/4 - with accuracy",
 			current:       WithAccuracy(0.01, 1000),
 			expansionRate: 1,
-			expected:      WithAccuracy(0.01, 1000),
+			expected:      WithAccuracy(0.0025, 1000),
 		},
 
 		{
@@ -171,7 +171,7 @@ func TestConfig_Next(t *testing.T) {
 			name:          "expansion rate > 1, the next config would be calculated and round to uint32 - with accuracy",
 			current:       WithAccuracy(0.01, 1234),
 			expansionRate: 1.345,
-			expected:      WithAccuracy(0.01, 1660),
+			expected:      WithAccuracy(0.0025, 1660),
 		},
 
 		{
@@ -185,7 +185,7 @@ func TestConfig_Next(t *testing.T) {
 			name:          "expansion rate > 1, maximum would be max uint32 - with accuracy",
 			current:       WithAccuracy(0.01, 5000),
 			expansionRate: 1000000,
-			expected:      WithAccuracy(0.01, math.MaxUint32),
+			expected:      WithAccuracy(0.0025, math.MaxUint32),
 		},
 	}
 
@@ -231,11 +231,11 @@ func TestConfig_Info_WithAccuracy(t *testing.T) {
 	expected := `Config WithAccuracy()
   - Requested error rate: 0.10000%
   - Expected number of items: 10000000
-  - Bits per item: 14.351
-  - Number of hash functions: 10
+  - Bits per item: 15.791
+  - Number of hash functions: 11
   - Size in bits of each has function: 28
-  - Storage capacity: 143507294 bits = 17938412 bytes = 17517.98KB = 17.11MB
-  - Estimated error rate: 0.10130%`
+  - Storage capacity: 157907294 bits = 19738412 bytes = 19275.79KB = 18.82MB
+  - Estimated error rate: 0.05072%`
 
 	if cf.Info() != expected {
 		t.Errorf("expected %v, got %v", expected, cf.Info())

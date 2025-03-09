@@ -136,6 +136,13 @@ func (c config) Next(expansionRate float64) Config {
 }
 
 func WithAccuracy(errorRate float64, numberOfItems uint32) Config {
+	/* To maintain the errorRate requested by the customer, we need to take into account that
+	 * the number of block can be grown every time current block reach its limitation.
+	 * The solution is halved the requested errorRate every time it grows including the first time.
+	 * So let say we will have N blocks:
+	 *   totalErrorRate = 1/2 errorRate + 1/4 errorRate + ... 1/2^n errorRate
+	 *   totalErrorRate ~= errorRate (https://en.wikipedia.org/wiki/1/2_%2B_1/4_%2B_1/8_%2B_1/16_%2B_%E2%8B%AF)
+	 */
 	if numberOfItems == 0 {
 		numberOfItems = DefaultNumberOfItem
 	}
