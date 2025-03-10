@@ -137,9 +137,42 @@ func (b *bloomFilter) Hasher() Hasher {
 	return b.hasher
 }
 
+func (b *bloomFilter) assertOtherBloomFilterIsTheSame(other BloomFilter) error {
+	if other == nil {
+		return ErrNilBloomFilter
+	}
+
+	if !b.storage.IsCompatible(other.Storage()) {
+		return ErrStorageDifference
+	}
+
+	if !b.hasher.IsCompatible(other.Hasher()) {
+		return ErrHasherDifference
+	}
+	return nil
+}
+
 func (b *bloomFilter) Intersect(other BloomFilter) error {
-	//TODO implement me
-	panic("implement me")
+	if err := b.assertOtherBloomFilterIsTheSame(other); err != nil {
+		return err
+	}
+
+	for i := 0; i < b.storage.BlockCount(); i++ {
+		cBlock := b.storage.Block(i)
+		oBlock := other.Storage().Block(i)
+		if cbi, ok := cBlock.(BatchIntersect); ok {
+			cbi.Intersect(oBlock)
+			continue
+		}
+
+		for j := uint32(0); j < cBlock.Capacity(); j++ {
+			if !cBlock.Get(j) || !oBlock.Get(j) {
+				cBlock.Clear(j)
+			}
+		}
+	}
+	b.count = -1
+	return nil
 }
 
 func (b *bloomFilter) Union(other BloomFilter) error {

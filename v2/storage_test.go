@@ -33,7 +33,22 @@ func (m *mockStorage) Block(index int) StorageBlock {
 }
 
 func (m *mockStorage) IsCompatible(other Storage) bool {
-	return false
+	o, ok := other.(*mockStorage)
+	if !ok {
+		return false
+	}
+
+	if len(m.blocks) != len(o.blocks) {
+		return false
+	}
+
+	for i := 0; i < len(m.blocks); i++ {
+		if !m.blocks[i].IsCompatible(o.blocks[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func TestMemoryStorage_NewBlock(t *testing.T) {

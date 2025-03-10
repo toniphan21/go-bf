@@ -1,6 +1,7 @@
 package bf
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -396,6 +397,166 @@ func TestBloomFilter_Hasher(t *testing.T) {
 		r := bf.Hasher()
 		if r != mHasher {
 			t.Errorf("expected hasher to be the same %v, got %v", mStorage, r)
+		}
+	})
+}
+
+func TestBloomFilter_Intersect(t *testing.T) {
+	t.Run("returns ErrNilBloomFilter if the given BloomFilter is nil", func(t *testing.T) {
+		a := bloomFilter{}
+		err := a.Intersect(nil)
+
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+
+		if !errors.Is(err, ErrNilBloomFilter) {
+			t.Errorf("expected ErrNilBloomFilter, got %v", err)
+		}
+	})
+
+	t.Run("returns ErrStorageDifference if the given BloomFilter has different storage", func(t *testing.T) {
+		a := &bloomFilter{storage: &memoryStorage{blocks: make([]StorageBlock, 1)}}
+		b := &bloomFilter{storage: &memoryStorage{blocks: make([]StorageBlock, 2)}}
+		err := a.Intersect(b)
+
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+
+		if !errors.Is(err, ErrStorageDifference) {
+			t.Errorf("expected ErrStorageDifference, got %v", err)
+		}
+	})
+
+	t.Run("returns ErrHasherDifference if the given BloomFilter has different hasher", func(t *testing.T) {
+		a := &bloomFilter{storage: &memoryStorage{}, hasher: &shaHasher{}}
+		b := &bloomFilter{storage: &memoryStorage{}, hasher: &fnvHasher{}}
+		err := a.Intersect(b)
+
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		}
+
+		if !errors.Is(err, ErrHasherDifference) {
+			t.Errorf("expected ErrHasherDifference, got %v", err)
+		}
+	})
+
+	t.Run("uses Clear to change data of current instance for each storage block", func(t *testing.T) {
+		storage := &mockStorage{
+			blocks: []StorageBlock{
+				&mockStorageBlock{capacity: 5, getData: map[uint32]bool{0: false, 1: false, 2: true, 3: true, 4: true}},
+				&mockStorageBlock{capacity: 5, getData: map[uint32]bool{0: true, 1: false, 2: false, 3: true, 4: true}},
+			},
+		}
+
+		a := bloomFilter{
+			storage: storage,
+			hasher:  &mockHasher{hash: [][]Key{{1, 2}, {3, 4, 5}}},
+		}
+
+		b := bloomFilter{
+			storage: &mockStorage{
+				blocks: []StorageBlock{
+					&mockStorageBlock{capacity: 5, getData: map[uint32]bool{0: false, 1: false, 2: true, 3: false, 4: true}},
+					&mockStorageBlock{capacity: 5, getData: map[uint32]bool{0: false, 1: false, 2: true, 3: true, 4: true}},
+				},
+			},
+			hasher: &mockHasher{hash: [][]Key{{1, 2}, {3, 4, 5}}},
+		}
+		err := a.Intersect(&b)
+
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+
+		if a.count != -1 {
+			t.Errorf("expected -1, got %v", a.count)
+		}
+
+		msb0, ok := storage.blocks[0].(*mockStorageBlock)
+		if !ok {
+			t.Errorf("expected mockStorageBlock, got %v", storage.blocks[0])
+		}
+		msb0.assertSetCalledWith(t, []uint32{})
+		msb0.assertClearCalledWith(t, []uint32{0, 1, 3})
+
+		msb1, ok := storage.blocks[1].(*mockStorageBlock)
+		if !ok {
+			t.Errorf("expected mockStorageBlock, got %v", storage.blocks[0])
+		}
+		msb1.assertSetCalledWith(t, []uint32{})
+		msb1.assertClearCalledWith(t, []uint32{0, 1, 2})
+	})
+
+	t.Run("uses Block Intersect if the block implement BatchIntersect", func(t *testing.T) {
+		storage := &mockStorage{
+			blocks: []StorageBlock{
+				&memoryStorageBlock{data: []uint{0, 2, 0b001100101110}},
+				&memoryStorageBlock{data: []uint{0, 3, 0b001100111101}},
+			},
+		}
+		otherStorage := &mockStorage{
+			blocks: []StorageBlock{
+				&memoryStorageBlock{data: []uint{7, 0, 0b101000101110}},
+				&memoryStorageBlock{data: []uint{1, 0, 0b010100111101}},
+			},
+		}
+
+		a := bloomFilter{
+			storage: storage,
+			hasher:  &mockHasher{hash: [][]Key{{1, 2}, {3, 4, 5}}},
+		}
+
+		b := bloomFilter{
+			storage: otherStorage,
+			hasher:  &mockHasher{hash: [][]Key{{1, 2}, {3, 4, 5}}},
+			count:   1000,
+		}
+		err := a.Intersect(&b)
+
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+
+		if a.count != -1 {
+			t.Errorf("expected -1, got %v", a.count)
+		}
+		if b.count != 1000 {
+			t.Errorf("Intersect should not change count of given BloomFilter")
+		}
+
+		sb0, ok := storage.blocks[0].(*memoryStorageBlock)
+		if !ok {
+			t.Errorf("expected memoryStorageBlock, got %v", storage.blocks[0])
+		}
+		if sb0.data[0] != 0 || sb0.data[1] != 0 || sb0.data[2] != 0b001000101110 {
+			t.Errorf("Intersect should apply AND operator to all bytes")
+		}
+
+		sb1, ok := storage.blocks[1].(*memoryStorageBlock)
+		if !ok {
+			t.Errorf("expected memoryStorageBlock, got %v", storage.blocks[0])
+		}
+		if sb1.data[0] != 0 || sb1.data[1] != 0 || sb1.data[2] != 0b000100111101 {
+			t.Errorf("Intersect should apply AND operator to all bytes")
+		}
+
+		sb0, ok = otherStorage.blocks[0].(*memoryStorageBlock)
+		if !ok {
+			t.Errorf("expected memoryStorageBlock, got %v", storage.blocks[0])
+		}
+		if sb0.data[0] != 7 || sb0.data[1] != 0 || sb0.data[2] != 0b101000101110 {
+			t.Errorf("Intersect should not changed the given Storage data")
+		}
+
+		sb1, ok = otherStorage.blocks[1].(*memoryStorageBlock)
+		if !ok {
+			t.Errorf("expected memoryStorageBlock, got %v", storage.blocks[0])
+		}
+		if sb1.data[0] != 1 || sb1.data[1] != 0 || sb1.data[2] != 0b010100111101 {
+			t.Errorf("Intersect should not changed the given Storage data")
 		}
 	})
 }
