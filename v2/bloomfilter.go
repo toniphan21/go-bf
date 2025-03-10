@@ -176,8 +176,26 @@ func (b *bloomFilter) Intersect(other BloomFilter) error {
 }
 
 func (b *bloomFilter) Union(other BloomFilter) error {
-	//TODO implement me
-	panic("implement me")
+	if err := b.assertOtherBloomFilterIsTheSame(other); err != nil {
+		return err
+	}
+
+	for i := 0; i < b.storage.BlockCount(); i++ {
+		cBlock := b.storage.Block(i)
+		oBlock := other.Storage().Block(i)
+		if cbi, ok := cBlock.(BatchUnion); ok {
+			cbi.Union(oBlock)
+			continue
+		}
+
+		for j := uint32(0); j < cBlock.Capacity(); j++ {
+			if cBlock.Get(j) || oBlock.Get(j) {
+				cBlock.Set(j)
+			}
+		}
+	}
+	b.count = -1
+	return nil
 }
 
 func (b *bloomFilter) Clone() (BloomFilter, error) {
