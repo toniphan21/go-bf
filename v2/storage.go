@@ -8,6 +8,8 @@ type Storage interface {
 	Block(index int) StorageBlock
 
 	IsCompatible(other Storage) bool
+
+	Clone() Storage
 }
 
 type memoryStorage struct {
@@ -50,6 +52,14 @@ func (s *memoryStorage) IsCompatible(other Storage) bool {
 	}
 
 	return true
+}
+
+func (s *memoryStorage) Clone() Storage {
+	cloned := &memoryStorage{blocks: make([]StorageBlock, len(s.blocks))}
+	for i := range s.blocks {
+		cloned.blocks[i] = s.blocks[i].Clone()
+	}
+	return cloned
 }
 
 var _ Storage = (*memoryStorage)(nil)

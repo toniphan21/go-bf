@@ -15,7 +15,7 @@ type BloomFilter interface {
 
 	Union(other BloomFilter) error
 
-	Clone() (BloomFilter, error)
+	Clone() BloomFilter
 }
 
 type expansion struct {
@@ -198,9 +198,24 @@ func (b *bloomFilter) Union(other BloomFilter) error {
 	return nil
 }
 
-func (b *bloomFilter) Clone() (BloomFilter, error) {
-	//TODO implement me
-	panic("implement me")
+func (b *bloomFilter) Clone() BloomFilter {
+	cloned := &bloomFilter{
+		config:           b.config,
+		currentConfig:    b.currentConfig,
+		expansion:        b.expansion,
+		storage:          b.storage.Clone(),
+		hasher:           b.hasher,
+		count:            b.count,
+		bitSetByBlocks:   make([]int, len(b.bitSetByBlocks)),
+		maxBitSetByBlock: make([]int, len(b.maxBitSetByBlock)),
+		configBlocks:     make([]ConfigBlock, len(b.configBlocks)),
+	}
+
+	copy(cloned.bitSetByBlocks, b.bitSetByBlocks)
+	copy(cloned.maxBitSetByBlock, b.maxBitSetByBlock)
+	copy(cloned.configBlocks, b.configBlocks)
+
+	return cloned
 }
 
 var _ BloomFilter = (*bloomFilter)(nil)

@@ -41,6 +41,27 @@ func (m *mockStorageBlock) IsCompatible(other StorageBlock) bool {
 	return o.capacity == m.capacity
 }
 
+func (m *mockStorageBlock) Clone() StorageBlock {
+	cloned := &mockStorageBlock{capacity: m.capacity}
+	if m.setIndex != nil {
+		cloned.setIndex = make([]uint32, len(m.setIndex))
+		copy(cloned.setIndex, m.setIndex)
+	}
+
+	if m.clearIndex != nil {
+		cloned.clearIndex = make([]uint32, len(m.clearIndex))
+		copy(cloned.clearIndex, m.clearIndex)
+	}
+
+	if m.getData != nil {
+		cloned.getData = make(map[uint32]bool, len(m.getData))
+		for k, v := range m.getData {
+			cloned.getData[k] = v
+		}
+	}
+	return cloned
+}
+
 func (m *mockStorageBlock) assertSetCalledWith(t *testing.T, indices []uint32) {
 	if len(m.setIndex) != len(indices) {
 		t.Errorf("Set is not called with %v", indices)
@@ -212,6 +233,42 @@ func TestMemoryStorageBlock_Union(t *testing.T) {
 	if b.data[0] != 0 || b.data[1] != 1 || b.data[2] != 0 && b.data[3] != 0b01010101 {
 		t.Errorf("Intersect should not changed the given Storage data")
 	}
+}
+
+func TestMemoryStorageBlock_Clone(t *testing.T) {
+	a := &memoryStorageBlock{data: []uint{1, 2, 3, 0b00110011}}
+	r, ok := a.Clone().(*memoryStorageBlock)
+	if !ok {
+		t.Errorf("Expected a memoryStorageBlock, got %T", a)
+	}
+
+	ap := &a.data
+	rp := &r.data
+	if ap == rp {
+		t.Errorf("Expected a different data to be cloned to different slice")
+	}
+
+	if !a.equals(r) {
+		t.Errorf("Cloned block is not equal to the original")
+	}
+}
+
+func (b *memoryStorageBlock) equals(other StorageBlock) bool {
+	r, ok := other.(*memoryStorageBlock)
+	if !ok {
+		return false
+	}
+
+	if len(b.data) != len(r.data) {
+		return false
+	}
+
+	for i := 0; i < len(b.data); i++ {
+		if b.data[i] != r.data[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func reverseByteBinaryString(b string) string {

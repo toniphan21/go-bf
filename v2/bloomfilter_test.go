@@ -2,6 +2,7 @@ package bf
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -717,6 +718,141 @@ func TestBloomFilter_Union(t *testing.T) {
 		}
 		if sb1.data[0] != 1 || sb1.data[1] != 0 || sb1.data[2] != 0b010100111101 {
 			t.Errorf("Union should not change the given Storage data")
+		}
+	})
+}
+
+func TestBloomFilter_Clone(t *testing.T) {
+	t.Run("copy config, currentConfig, hasher, expansion, count to new instance", func(t *testing.T) {
+		mStorage := &mockStorage{}
+		dConfig := &dummyConfig{k: 5, capacity: 1000, s: 16}
+		mHasher := &mockHasher{}
+
+		bf, err := newBloomFilter(dConfig, mHasher, mStorage, expansion{rate: 2, ratio: 0.6666666666})
+		bf.count = 100000
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+
+		cloned, ok := bf.Clone().(*bloomFilter)
+		if !ok {
+			t.Errorf("expected bloomFilter, got %v", bf)
+		}
+
+		if bf.config != cloned.config {
+			t.Errorf("expected %v, got %v", cloned.config, bf.config)
+		}
+
+		if bf.currentConfig != cloned.currentConfig {
+			t.Errorf("expected %v, got %v", cloned.config, bf.config)
+		}
+
+		if bf.hasher != cloned.hasher {
+			t.Errorf("expected %v, got %v", cloned.hasher, bf.hasher)
+		}
+
+		if bf.count != cloned.count {
+			t.Errorf("expected %v, got %v", cloned.count, bf.count)
+		}
+
+		if bf.expansion != cloned.expansion {
+			t.Errorf("expected %v, got %v", cloned.expansion, bf.expansion)
+		}
+
+		if &bf.expansion == &cloned.expansion {
+			t.Errorf("expect expansion should be copied it values, got same instances")
+		}
+	})
+
+	t.Run("copy bitSetByBlocks, maxBitSetByBlock, configBlocks to new instance", func(t *testing.T) {
+		mStorage := &mockStorage{}
+		dConfig := &dummyConfig{k: 5, capacity: 1000, s: 16}
+		mHasher := &mockHasher{}
+
+		bf, err := newBloomFilter(dConfig, mHasher, mStorage, expansion{rate: 2, ratio: 0.6666666666})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+
+		bf.bitSetByBlocks = []int{1, 2, 3, 4, 5}
+		bf.maxBitSetByBlock = []int{11, 12, 13, 14, 15}
+		bf.configBlocks = []ConfigBlock{
+			{Capacity: 1, NumberOfHashFunctions: 2, KeySizeInBits: 3},
+			{Capacity: 10, NumberOfHashFunctions: 20, KeySizeInBits: 30},
+		}
+
+		cloned, ok := bf.Clone().(*bloomFilter)
+		if !ok {
+			t.Errorf("expected bloomFilter, got %v", bf)
+		}
+
+		if &bf.bitSetByBlocks == &cloned.bitSetByBlocks {
+			t.Errorf("expect bitSetByBlocks should be copied it values, got same instances")
+		}
+
+		if !slices.Equal(cloned.bitSetByBlocks, []int{1, 2, 3, 4, 5}) {
+			t.Errorf("expect bitSetByBlocks should be copied it values, got different values")
+		}
+
+		if &bf.maxBitSetByBlock == &cloned.maxBitSetByBlock {
+			t.Errorf("expect maxBitSetByBlock should be copied it values, got same instances")
+		}
+
+		if !slices.Equal(cloned.maxBitSetByBlock, []int{11, 12, 13, 14, 15}) {
+			t.Errorf("expect maxBitSetByBlock should be copied it values, got different values")
+		}
+
+		if &bf.configBlocks == &cloned.configBlocks {
+			t.Errorf("expect configBlocks should be copied it values, got same instances")
+		}
+
+		if !slices.Equal(cloned.configBlocks, []ConfigBlock{
+			{Capacity: 1, NumberOfHashFunctions: 2, KeySizeInBits: 3},
+			{Capacity: 10, NumberOfHashFunctions: 20, KeySizeInBits: 30},
+		}) {
+			t.Errorf("expect configBlocks should be copied it values, got different values")
+		}
+	})
+
+	t.Run("use storage.Clone to clone a storage", func(t *testing.T) {
+		mStorage := &mockStorage{}
+		dConfig := &dummyConfig{k: 5, capacity: 1000, s: 16}
+		mHasher := &mockHasher{}
+
+		bf, err := newBloomFilter(dConfig, mHasher, mStorage, expansion{rate: 2, ratio: 0.6666666666})
+		if err != nil {
+			t.Errorf("expected nil, got %v", err)
+		}
+
+		blockA := &memoryStorageBlock{data: []uint{0, 1, 2, 3, 4}, capacity: 10}
+		blockB := &memoryStorageBlock{data: []uint{3, 4, 5, 6, 7}, capacity: 10}
+		s := &memoryStorage{blocks: []StorageBlock{blockA, blockB}}
+		bf.storage = s
+
+		cloned, ok := bf.Clone().(*bloomFilter)
+		if !ok {
+			t.Errorf("expected bloomFilter, got %v", bf)
+		}
+
+		r, ok := cloned.storage.(*memoryStorage)
+		if !ok {
+			t.Errorf("Expected a memoryStorage, got %T", cloned.storage)
+		}
+
+		ap := &s.blocks
+		rp := &r.blocks
+		if ap == rp {
+			t.Errorf("Expected a different blocks to be cloned to different slice")
+		}
+
+		for i := 0; i < len(s.blocks); i++ {
+			b, ok := s.blocks[i].(*memoryStorageBlock)
+			if !ok {
+				t.Errorf("Expected a memoryStorageBlock, got %T", s.blocks[i])
+			}
+			if !b.equals(r.blocks[i]) {
+				t.Errorf("Cloned Storage is not equal to the original")
+			}
 		}
 	})
 }

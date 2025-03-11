@@ -51,6 +51,32 @@ func (m *mockStorage) IsCompatible(other Storage) bool {
 	return true
 }
 
+func (m *mockStorage) Clone() Storage {
+	cloned := &mockStorage{}
+	if m.blocks != nil {
+		cloned.blocks = make([]StorageBlock, len(m.blocks))
+		for i, block := range m.blocks {
+			cloned.blocks[i] = block.Clone()
+		}
+	}
+
+	if m.newBlock != nil {
+		cloned.newBlock = make(map[int]StorageBlock, len(m.newBlock))
+		for k, v := range m.newBlock {
+			cloned.newBlock[k] = v.Clone()
+		}
+	}
+
+	if m.newBlockCalls != nil {
+		cloned.newBlockCalls = make(map[int]uint32, len(m.newBlockCalls))
+		for k, v := range m.newBlockCalls {
+			cloned.newBlockCalls[k] = v
+		}
+	}
+
+	return cloned
+}
+
 func TestMemoryStorage_NewBlock(t *testing.T) {
 	cases := []struct {
 		name                string
@@ -207,5 +233,31 @@ func TestMemoryStorage_IsCompatible(t *testing.T) {
 				t.Errorf("expected %v, got %v", tc.expected, r)
 			}
 		})
+	}
+}
+
+func TestMemoryStorage_Clone(t *testing.T) {
+	blockA := &memoryStorageBlock{data: []uint{0, 1, 2, 3, 4}, capacity: 10}
+	blockB := &memoryStorageBlock{data: []uint{3, 4, 5, 6, 7}, capacity: 10}
+	s := &memoryStorage{blocks: []StorageBlock{blockA, blockB}}
+	r, ok := s.Clone().(*memoryStorage)
+	if !ok {
+		t.Errorf("Expected a memoryStorage, got %T", s)
+	}
+
+	ap := &s.blocks
+	rp := &r.blocks
+	if ap == rp {
+		t.Errorf("Expected a different blocks to be cloned to different slice")
+	}
+
+	for i := 0; i < len(s.blocks); i++ {
+		b, ok := s.blocks[i].(*memoryStorageBlock)
+		if !ok {
+			t.Errorf("Expected a memoryStorageBlock, got %T", s.blocks[i])
+		}
+		if !b.equals(r.blocks[i]) {
+			t.Errorf("Cloned Storage is not equal to the original")
+		}
 	}
 }

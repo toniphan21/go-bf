@@ -12,6 +12,8 @@ type StorageBlock interface {
 	Capacity() uint32
 
 	IsCompatible(other StorageBlock) bool
+
+	Clone() StorageBlock
 }
 
 type BatchIntersect interface {
@@ -102,6 +104,12 @@ func (b *memoryStorageBlock) Union(other StorageBlock) {
 	for i := 0; i < l; i++ {
 		b.data[i] |= o.data[i]
 	}
+}
+
+func (b *memoryStorageBlock) Clone() StorageBlock {
+	cloned := &memoryStorageBlock{data: make([]uint, len(b.data)), capacity: b.capacity}
+	copy(cloned.data, b.data)
+	return cloned
 }
 
 var _ StorageBlock = (*memoryStorageBlock)(nil)
