@@ -72,11 +72,6 @@ func newBloomFilter(config Config, hasher Hasher, storage Storage, expansion exp
 func (b *bloomFilter) Add(item []byte) {
 	lastBlock := len(b.configBlocks) - 1
 	keySets := b.hasher.Hash(item, b.configBlocks)
-	for i := 0; i < lastBlock; i++ {
-		if b.existsInBlock(i, keySets[i]) {
-			return
-		}
-	}
 
 	storageBlock := b.storage.Block(lastBlock)
 	exists := true

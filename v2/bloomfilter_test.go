@@ -154,36 +154,6 @@ func TestBloomFilter_Add(t *testing.T) {
 		}
 	})
 
-	t.Run("Add ignores if the key already added into previous block", func(t *testing.T) {
-		dConfig := &dummyConfig{k: 5, capacity: 1000, s: 16}
-		mStorageBlock := &mockStorageBlock{
-			capacity: 10,
-			getData:  map[uint32]bool{0: false, 1: true, 2: true, 3: true},
-		}
-		mStorage := &mockStorage{blocks: []StorageBlock{mStorageBlock}}
-		mHasher := &mockHasher{
-			hash: [][]Key{
-				{11, 22, 33},
-				{44, 55, 66, 77},
-			},
-		}
-
-		bf, err := newBloomFilter(dConfig, mHasher, mStorage, expansion{rate: 2, ratio: 0.6666666666})
-		bf.configBlocks = []ConfigBlock{toConfigBlock(dConfig), toConfigBlock(dConfig)}
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		bf.Add([]byte{10, 20, 30})
-		if !isArrayEquals(mHasher.hashInput, []byte{10, 20, 30}) {
-			t.Errorf("expected hashed called with %v, got %v", []byte{10, 20, 30}, mHasher.hashInput)
-		}
-
-		if bf.Count() != 0 {
-			t.Errorf("expected Count() is 0 after adding because keys already exists, got %v", bf.Count())
-		}
-	})
-
 	t.Run("Add will not expand if bitSetByBlocks not exceeded precalculated value", func(t *testing.T) {
 		dConfig := &dummyConfig{k: 5, capacity: 1000, s: 16}
 		mStorageBlock := &mockStorageBlock{capacity: 10}
